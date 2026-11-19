@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zeus Shop</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{--bg:#090909;--card:#151515;--card2:#1c1c1c;--text:#f5f0e8;--muted:#858585;--gold:#c99b50;--gold2:#e4bd77;--border:#292929;--danger:#d66b60}
+body.light{--bg:#eeeae2;--card:#fff;--card2:#f4f0e8;--text:#211e19;--muted:#77716a;--border:#ded7ca}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif;min-height:100vh;transition:.25s}
+button,input{font:inherit}button{cursor:pointer}
+svg.lucide{width:18px;height:18px;flex-shrink:0}
+#loader{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:#080808 url("zeus.jpg") center 30%/cover;transition:opacity .7s}
+#loader:after{content:"";position:absolute;inset:0;background:#0007}
+.loader-content{position:relative;z-index:2;text-align:center}
+.loader-content h1{font-size:43px;letter-spacing:8px;color:var(--gold2)}
+.loader-content p{letter-spacing:5px;margin-top:8px}
+.loader-line{height:2px;width:150px;background:#555;margin:25px auto;overflow:hidden}
+.loader-line span{display:block;width:40%;height:100%;background:var(--gold);animation:load 1s infinite}
+@keyframes load{from{transform:translateX(-100%)}to{transform:translateX(400%)}}
+.hidden{display:none!important}
+
+/* Авторизация и экраны */
+.auth-bg{min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px;background:linear-gradient(#0009,#000d),url("zeus.jpg") center/cover fixed}
+.card{background:var(--card);border:1px solid var(--border);border-radius:19px;padding:25px;width:100%;max-width:450px;box-shadow:0 15px 60px #0008}
+.logo{text-align:center;font-size:31px;font-weight:900;letter-spacing:3px}
+.logo span{color:var(--gold)}
+.subtitle{color:var(--muted);text-align:center;margin:9px 0 25px}
+.tabs{display:flex;border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:20px}
+.tabs button{flex:1;background:transparent;color:var(--muted);border:0;padding:14px;display:flex;align-items:center;justify-content:center;gap:7px}
+.tabs button.active{color:var(--gold2);border:1px solid var(--gold)}
+.field{margin-bottom:13px;position:relative}
+.field>svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--gold);width:18px;height:18px}
+.field input{width:100%;padding:16px 16px 16px 46px;border-radius:11px;border:1px solid var(--border);background:var(--card2);color:var(--text);outline:none}
+.field input:focus{border-color:var(--gold)}
+.main-btn{width:100%;padding:16px;background:linear-gradient(110deg,#ae803c,#e1b668);border:0;border-radius:11px;font-weight:bold;color:#15110b;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.message{color:var(--gold2);text-align:center;font-size:13px;margin-top:14px;min-height:17px}
+
+/* Капча */
+.captcha-row{display:flex;gap:10px;margin-bottom:13px}
+.captcha-q{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--card2);border:1px dashed var(--gold);border-radius:11px;font-size:24px;font-weight:bold;letter-spacing:4px;color:var(--gold2);user-select:none}
+.icon-btn{width:54px;background:var(--card2);color:var(--gold);border:1px solid var(--border);border-radius:11px;display:flex;align-items:center;justify-content:center}
+
+/* Язык */
+.lang-btn{width:100%;display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:11px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:11px;font-size:16px}
+.lang-btn:hover{border-color:var(--gold)}
+.lang-btn .flag{font-size:24px}
+
+/* Баннеры */
+.overlay{position:fixed;inset:0;z-index:1500;background:#000c;display:flex;align-items:center;justify-content:center;padding:20px}
+.banner-icon{width:58px;height:58px;margin:0 auto 16px;border-radius:50%;background:#322719;color:var(--gold2);display:flex;align-items:center;justify-content:center}
+.banner-icon svg{width:28px;height:28px}
+.banner h2{text-align:center;font-size:20px;margin-bottom:12px}
+.banner p{color:var(--muted);font-size:13px;line-height:1.6;text-align:center}
+.banner ul{list-style:none;margin:14px 0 6px}
+.banner li{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px;margin-bottom:9px}
+.banner li svg{color:var(--gold)}
+.big-percent{text-align:center;font-size:34px;font-weight:900;color:var(--gold2);margin:4px 0 10px}
+
+/* Приложение */
+#app{min-height:100vh;padding-bottom:95px}
+.topbar{height:72px;padding:0 20px;display:flex;justify-content:space-between;align-items:center;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.top-logo{font-size:22px;font-weight:900;letter-spacing:2px}
+.top-logo span{color:var(--gold)}
+.top-city{color:var(--muted);font-size:12px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.top-city svg{width:12px;height:12px;color:var(--gold)}
+.top-icon{width:40px;height:40px;border:1px solid var(--border);background:var(--card2);color:var(--gold);border-radius:11px;display:flex;align-items:center;justify-content:center}
+.container{width:100%;max-width:1050px;margin:auto;padding:24px 17px}
+.section-title{font-size:25px;margin-bottom:7px;display:flex;align-items:center;gap:10px}
+.section-title svg{width:24px;height:24px;color:var(--gold)}
+.section-subtitle{font-size:13px;color:var(--muted);margin-bottom:23px}
+
+/* Товары */
+.products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.product{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:16px;transition:.2s}
+.product:hover{border-color:var(--gold);transform:translateY(-2px)}
+.product-icon{position:relative;height:105px;border-radius:11px;background:linear-gradient(135deg,#28221a,#100f0d);display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--gold)}
+.product-icon>svg{width:43px;height:43px}
+.plogo{position:absolute;top:8px;left:8px;width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--gold);background:#000}
+.product h3{font-size:16px;margin-bottom:9px}
+.product p{color:var(--muted);font-size:12px;line-height:1.5;min-height:54px}
+.product-tag{display:inline-flex;align-items:center;gap:4px;color:var(--gold2);font-size:10px;letter-spacing:1px;margin-top:12px;text-transform:uppercase}
+.product-tag svg{width:11px;height:11px}
+
+.price{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:18px;font-weight:bold;color:var(--gold2)}
+.price svg{width:15px;height:15px}
+.price+.product-tag{margin-top:6px}
+/* Баланс */
+.balance-card{background:linear-gradient(130deg,#302317,#17130e);border:1px solid #75552e;border-radius:18px;padding:27px 22px;margin:20px 0}
+.balance-label{color:#c4aa82;font-size:13px;display:flex;align-items:center;gap:7px}
+.balance-value{font-size:36px;font-weight:bold;margin:15px 0 8px;color:#edc77f}
+.balance-description{font-size:12px;color:#a9997e}
+.topup-btn{margin-top:18px;width:auto;padding:13px 22px}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:14px}
+.info-card h3{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.info-card h3 svg{color:var(--gold)}
+.info-card p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* Пополнение */
+.method{width:100%;display:flex;align-items:center;gap:13px;padding:14px;margin-bottom:10px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:11px;text-align:left}
+.method.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.method .m-ico{width:38px;height:38px;border-radius:10px;background:#322719;color:var(--gold2);display:flex;align-items:center;justify-content:center}
+.method small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.method .check{margin-left:auto;color:var(--gold);opacity:0}
+.method.active .check{opacity:1}
+.cancel-btn{width:100%;padding:13px;margin-top:10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:11px}
+
+.addr{font-family:monospace;font-size:12px;word-break:break-all;background:var(--card2);border:1px dashed var(--gold);border-radius:10px;padding:13px;margin:12px 0;color:var(--gold2)}
+.pay-box .main-btn{margin-top:0;margin-bottom:10px}
+/* Профиль */
+.profile-head{display:flex;align-items:center;gap:15px;background:var(--card);border:1px solid var(--border);border-radius:15px;padding:20px;margin-bottom:18px}
+.avatar{width:55px;height:55px;background:#322719;color:var(--gold2);display:flex;justify-content:center;align-items:center;border-radius:50%}
+.avatar svg{width:26px;height:26px}
+.profile-head p{color:var(--muted);font-size:12px;margin-top:5px}
+.setting{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:17px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.setting-info{display:flex;align-items:center;gap:12px}
+.setting-info>svg{color:var(--gold)}
+.setting-info strong{font-size:14px}
+.setting-info small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.setting button{background:var(--card2);color:var(--gold2);border:1px solid var(--border);border-radius:9px;padding:10px 13px}
+select{background:var(--card2);color:var(--text);padding:10px;border:1px solid var(--border);border-radius:9px}
+.logout{width:100%;padding:15px;background:transparent;border:1px solid #743c35;color:var(--danger);border-radius:12px;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* Нижнее меню */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:76px;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:100%;font-size:11px}
+.nav-btn svg{width:21px;height:21px}
+.nav-btn.active{color:var(--gold2)}
+.nav-btn.active svg{filter:drop-shadow(0 0 5px #c99b5080)}
+
+.city-result{background:var(--card2);border:1px solid var(--border);padding:13px;border-radius:9px;margin-top:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:9px}
+.city-result svg{color:var(--gold);width:15px;height:15px}
+.city-result:hover{border-color:var(--gold)}
+@media(min-width:650px){.products{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:950px){.products{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-content">
+    <h1>ZEUS</h1><p>SHOP</p>
+    <div class="loader-line"><span></span></div>
+  </div>
+</div>
+
+<!-- Капча -->
+<div class="auth-bg hidden" id="captchaScreen">
+  <div class="card">
+    <div class="logo">ZEUS <span>SHOP</span></div>
+    <div class="subtitle">Проверка · Перевірка · Weryfikacja</div>
+    <div class="captcha-row">
+      <div class="captcha-q"><i data-lucide="shield-question"></i><span id="captchaQ"></span></div>
+      <button class="icon-btn" onclick="newCaptcha()"><i data-lucide="refresh-cw"></i></button>
+    </div>
+    <div class="field">
+      <i data-lucide="hash"></i>
+      <input id="captchaInput" type="number" inputmode="numeric" placeholder="?">
+    </div>
+    <button class="main-btn" onclick="checkCaptcha()"><i data-lucide="check"></i><span>OK</span></button>
+    <div class="message" id="captchaMessage"></div>
+  </div>
+</div>
+
+<!-- Выбор языка -->
+<div class="auth-bg hidden" id="langScreen">
+  <div class="card">
+    <div class="logo">ZEUS <span>SHOP</span></div>
+    <div class="subtitle"><i data-lucide="languages" style="vertical-align:middle"></i> Мова · Język · Язык</div>
+    <button class="lang-btn" onclick="chooseLang('uk')"><span class="flag">🇺🇦</span>Українська</button>
+    <button class="lang-btn" onclick="chooseLang('pl')"><span class="flag">🇵🇱</span>Polski</button>
+    <button class="lang-btn" onclick="chooseLang('ru')"><span class="flag">🌐</span>Русский</button>
+  </div>
+</div>
+
+<!-- Политика конфиденциальности -->
+<div class="overlay hidden" id="privacyBanner">
+  <div class="card banner">
+    <div class="banner-icon"><i data-lucide="lock-keyhole"></i></div>
+    <h2 data-i18n="privTitle"></h2>
+    <p data-i18n="privText"></p>
+    <ul>
+      <li><i data-lucide="user-round"></i><span data-i18n="priv1"></span></li>
+      <li><i data-lucide="eye-off"></i><span data-i18n="priv2"></span></li>
+      <li><i data-lucide="trash-2"></i><span data-i18n="priv3"></span></li>
+    </ul>
+    <button class="main-btn" onclick="acceptPrivacy()"><i data-lucide="check-circle-2"></i><span data-i18n="accept"></span></button>
+  </div>
+</div>
+
+<!-- Баннер комиссии -->
+<div class="overlay hidden" id="commissionBanner">
+  <div class="card banner">
+    <div class="banner-icon"><i data-lucide="badge-percent"></i></div>
+    <h2 data-i18n="commTitle"></h2>
+    <div class="big-percent"><i data-lucide="trending-down" style="vertical-align:middle"></i> <span data-i18n="commBig"></span></div>
+    <p data-i18n="commText"></p>
+    <button class="main-btn" onclick="closeCommission()"><i data-lucide="sparkles"></i><span data-i18n="great"></span></button>
+  </div>
+</div>
+
+<!-- Пополнение -->
+<div class="overlay hidden" id="topupModal">
+  <div class="card banner">
+    <div class="banner-icon"><i data-lucide="circle-plus"></i></div>
+    <h2 data-i18n="topup"></h2>
+    <p style="margin-bottom:16px" data-i18n="topupChoose"></p>
+    <div id="methods"></div>
+    <div class="field">
+      <i data-lucide="coins"></i>
+      <input id="topupAmount" type="number" min="1" data-ph="amount">
+    </div>
+    <button class="main-btn" onclick="confirmTopup()"><i data-lucide="arrow-right"></i><span data-i18n="continue"></span></button>
+    <div class="message" id="topupMessage"></div>
+    <div id="payBox" class="info-card pay-box hidden">
+      <p id="payNote"></p>
+      <div class="addr" id="payAddr"></div>
+      <button class="main-btn" onclick="copyAddr()"><i data-lucide="copy"></i><span data-i18n="copy"></span></button>
+      <div class="field"><i data-lucide="hash"></i><input id="payTx" data-ph="txid"></div>
+      <button class="main-btn" onclick="claimPay()"><i data-lucide="send"></i><span data-i18n="iPaid"></span></button>
+    </div>
+    <button class="cancel-btn" onclick="closeTopup()" data-i18n="close"></button>
+  </div>
+</div>
+
+<!-- Авторизация -->
+<div class="auth-bg hidden" id="authScreen">
+  <div class="card">
+    <div class="logo">ZEUS <span>SHOP</span></div>
+    <div class="subtitle" data-i18n="welcome"></div>
+    <div class="tabs">
+      <button id="loginTab" class="active" onclick="setMode('login')"><i data-lucide="log-in"></i><span data-i18n="login"></span></button>
+      <button id="registerTab" onclick="setMode('register')"><i data-lucide="user-plus"></i><span data-i18n="register"></span></button>
+    </div>
+    <div class="field"><i data-lucide="user-round"></i><input id="username" data-ph="loginPh"></div>
+    <div class="field"><i data-lucide="lock"></i><input id="password" type="password" data-ph="passPh"></div>
+    <div class="field hidden" id="confirmField"><i data-lucide="shield-check"></i><input id="confirmPassword" type="password" data-ph="confirmPh"></div>
+    <button class="main-btn" onclick="submitAuth()"><i data-lucide="arrow-right-to-line"></i><span id="authButton" data-i18n="enter"></span></button>
+    <div class="message" id="authMessage"></div>
+  </div>
+</div>
+
+<!-- Выбор города -->
+<div class="auth-bg hidden" id="cityScreen">
+  <div class="card">
+    <div class="logo">ZEUS <span>SHOP</span></div>
+    <div class="subtitle" data-i18n="cityTitle"></div>
+    <div class="field"><i data-lucide="map-pin"></i><input id="cityInput" data-ph="cityPh"></div>
+    <div id="cityResults"></div>
+    <div class="message" id="cityMessage"></div>
+  </div>
+</div>
+
+<!-- Приложение -->
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div>
+      <div class="top-logo">ZEUS <span>SHOP</span></div>
+      <div class="top-city"><i data-lucide="map-pin"></i><span id="headerCity"></span></div>
+    </div>
+    <button class="top-icon" onclick="showPage('profile')"><i data-lucide="user-round"></i></button>
+  </header>
+
+  <section class="container page-section" id="productsPage">
+    <h1 class="section-title"><i data-lucide="store"></i><span data-i18n="ourProducts"></span></h1>
+    <p class="section-subtitle" data-i18n="productsSub"></p>
+    <div class="products" id="productsGrid"></div>
+  </section>
+
+  <section class="container page-section hidden" id="balancePage">
+    <h1 class="section-title"><i data-lucide="wallet"></i><span data-i18n="myBalance"></span></h1>
+    <p class="section-subtitle" data-i18n="balanceSub"></p>
+    <div class="balance-card">
+      <div class="balance-label"><i data-lucide="coins"></i><span data-i18n="curBalance"></span></div>
+      <div class="balance-value" id="balanceValue">0.00 $</div>
+      <div class="balance-description" data-i18n="demoBal"></div>
+      <button class="main-btn topup-btn" onclick="openTopup()"><i data-lucide="circle-plus"></i><span data-i18n="topup"></span></button>
+    </div>
+    <div class="info-card">
+      <h3><i data-lucide="piggy-bank"></i><span data-i18n="myFunds"></span></h3>
+      <p data-i18n="fundsText"></p>
+    </div>
+    <div class="info-card">
+      <h3><i data-lucide="history"></i><span data-i18n="history"></span></h3>
+      <p data-i18n="noOps"></p>
+    </div>
+  </section>
+
+  <section class="container page-section hidden" id="profilePage">
+    <h1 class="section-title"><i data-lucide="user-cog"></i><span data-i18n="myProfile"></span></h1>
+    <p class="section-subtitle" data-i18n="profileSub"></p>
+    <div class="profile-head">
+      <div class="avatar"><i data-lucide="user-round"></i></div>
+      <div><h3 id="profileName"></h3><p id="profileCity"></p></div>
+    </div>
+
+    <div class="setting">
+      <div class="setting-info"><i data-lucide="palette"></i>
+        <div><strong data-i18n="theme"></strong><small data-i18n="themeSub"></small></div></div>
+      <select id="themeSelect" onchange="changeTheme(this.value)">
+        <option value="dark" data-i18n="dark"></option>
+        <option value="light" data-i18n="light"></option>
+      </select>
+    </div>
+
+    <div class="setting">
+      <div class="setting-info"><i data-lucide="languages"></i>
+        <div><strong data-i18n="language"></strong><small data-i18n="languageSub"></small></div></div>
+      <select id="langSelect" onchange="chooseLang(this.value,true)">
+        <option value="uk">Українська</option>
+        <option value="pl">Polski</option>
+        <option value="ru">Русский</option>
+      </select>
+    </div>
+
+    <div class="setting">
+      <div class="setting-info"><i data-lucide="map-pin"></i>
+        <div><strong data-i18n="myCity"></strong><small id="currentCity"></small></div></div>
+      <button onclick="openCityChange()" data-i18n="change"></button>
+    </div>
+
+    <div id="cityChangeBox" class="info-card hidden">
+      <h3><i data-lucide="map-pinned"></i><span data-i18n="changeCity"></span></h3>
+      <div class="field"><i data-lucide="search"></i><input id="newCityInput" data-ph="enterCity"></div>
+      <div id="newCityResults"></div>
+      <div class="message" id="newCityMessage"></div>
+    </div>
+
+    <div class="setting">
+      <div class="setting-info"><i data-lucide="wallet"></i>
+        <div><strong data-i18n="balance"></strong><small data-i18n="myFundsShort"></small></div></div>
+      <button onclick="showPage('balance')" data-i18n="open"></button>
+    </div>
+
+    <button class="logout" onclick="logout()"><i data-lucide="log-out"></i><span data-i18n="logout"></span></button>
+  </section>
+</div>
+
+<nav class="bottom-nav hidden" id="bottomNav">
+  <button class="nav-btn active" data-page="products" onclick="showPage('products')"><i data-lucide="shopping-bag"></i><span data-i18n="navProducts"></span></button>
+  <button class="nav-btn" data-page="balance" onclick="showPage('balance')"><i data-lucide="wallet"></i><span data-i18n="navBalance"></span></button>
+  <button class="nav-btn" data-page="profile" onclick="showPage('profile')"><i data-lucide="user-round"></i><span data-i18n="navProfile"></span></button>
+</nav>
+
+<script>
+let mode = "login", cityTimer = null, captchaAnswer = 0, method = null;
+let lang = localStorage.getItem("zeusLang") || "";
+const $ = id => document.getElementById(id);
+const icons = () => { if (window.lucide) lucide.createIcons(); };
+
+/* ===== Переводы ===== */
+const T = {
+ru:{
+server:"Ошибка сервера. Попробуйте ещё раз.",copy:"Скопировать адрес",copied:"Адрес скопирован",iPaid:"Я оплатил",claimSent:"Заявка отправлена. Баланс пополнится после проверки платежа.",payTo:"Отправьте эквивалент {a} $ в {c} на этот адрес:",payOpened:"Откройте счёт в Crypto Bot и оплатите любой криптовалютой. Баланс обновится автоматически.",paidOk:"Оплата получена, баланс пополнен!",txid:"TXID транзакции (необязательно)",cpfail:"Не удалось создать счёт. Попробуйте позже.",limit:"Слишком много необработанных заявок.",
+noServer:"Сервер недоступен. Откройте магазин через Telegram-бота.",welcome:"Добро пожаловать",login:"Вход",register:"Регистрация",enter:"Войти",create:"Создать аккаунт",
+loginPh:"Логин",passPh:"Пароль",confirmPh:"Подтверждение пароля",
+min3:"Минимум 3 символа в логине",min4:"Минимум 4 символа в пароле",mismatch:"Пароли не совпадают",taken:"Логин уже занят",wrong:"Неверный логин или пароль",
+cityTitle:"Укажите ваш город",cityPh:"Название города",searching:"Ищем город...",notFound:"Город не найден",pick:"Выберите правильный город:",connErr:"Ошибка соединения. Проверьте интернет.",yourCity:"Ваш город",
+ourProducts:"Наши товары",productsSub:"Подборка качественных товаров Zeus Shop",
+myBalance:"Мой баланс",balanceSub:"Финансы аккаунта Zeus Shop",curBalance:"Текущий баланс",demoBal:"Баланс вашего аккаунта",
+myFunds:"Мои средства",fundsText:"Здесь в дальнейшем появится история операций и информация о платежах.",history:"История операций",noOps:"Пока операций нет.",
+topup:"Пополнить",topupChoose:"Выберите способ пополнения",amount:"Сумма, $",continue:"Продолжить",close:"Закрыть",
+pickMethod:"Выберите способ пополнения",pickAmount:"Введите сумму",topupSoon:"Выбрано: {m}, {a} $. Приём платежей скоро будет подключён.",
+myProfile:"Мой профиль",profileSub:"Настройки аккаунта",user:"Пользователь",notSet:"Не указан",
+theme:"Тема оформления",themeSub:"Выбери внешний вид магазина",dark:"Тёмная",light:"Светлая",
+language:"Язык",languageSub:"Язык интерфейса",myCity:"Мой город",change:"Изменить",changeCity:"Изменить город",enterCity:"Введите город",
+balance:"Баланс",myFundsShort:"Мои средства",open:"Открыть",logout:"Выйти из аккаунта",
+navProducts:"Товары",navBalance:"Баланс",navProfile:"Профиль",
+privTitle:"Политика конфиденциальности",privText:"Продолжая, вы соглашаетесь с политикой конфиденциальности Zeus Shop.",
+priv1:"Мы храним только логин и город",priv2:"Данные не передаются третьим лицам",priv3:"Вы можете удалить аккаунт в любой момент",accept:"Принимаю",
+commTitle:"Добро пожаловать в Zeus Shop!",commBig:"Самая низкая комиссия",commText:"У нас самая маленькая комиссия на рынке. Пополняйте баланс и покупайте выгодно.",great:"Отлично",
+p1:"Премиальный продукт с качественным исполнением и вниманием к деталям.",p2:"Надёжное решение для тех, кто ценит качество, удобство и стабильность.",p3:"Особенная серия с премиальным оформлением и высоким уровнем исполнения.",p4:"Продуманный комплект для пользователей, которые выбирают функциональность.",p5:"Практичный вариант с хорошим качеством и сбалансированными характеристиками.",p6:"Яркая коллекция с оригинальной концепцией и стильным дизайном.",p7:"Флагманская линейка для тех, кто предпочитает максимальное качество."},
+uk:{
+server:"Помилка сервера. Спробуйте ще раз.",copy:"Скопіювати адресу",copied:"Адресу скопійовано",iPaid:"Я оплатив",claimSent:"Заявку надіслано. Баланс поповниться після перевірки платежу.",payTo:"Надішліть еквівалент {a} $ у {c} на цю адресу:",payOpened:"Відкрийте рахунок у Crypto Bot і сплатіть будь-якою криптовалютою. Баланс оновиться автоматично.",paidOk:"Оплату отримано, баланс поповнено!",txid:"TXID транзакції (необов'язково)",cpfail:"Не вдалося створити рахунок. Спробуйте пізніше.",limit:"Забагато необроблених заявок.",
+noServer:"Сервер недоступний. Відкрийте магазин через Telegram-бота.",welcome:"Ласкаво просимо",login:"Вхід",register:"Реєстрація",enter:"Увійти",create:"Створити акаунт",
+loginPh:"Логін",passPh:"Пароль",confirmPh:"Підтвердження пароля",
+min3:"Мінімум 3 символи в логіні",min4:"Мінімум 4 символи в паролі",mismatch:"Паролі не збігаються",taken:"Логін уже зайнятий",wrong:"Невірний логін або пароль",
+cityTitle:"Вкажіть ваше місто",cityPh:"Назва міста",searching:"Шукаємо місто...",notFound:"Місто не знайдено",pick:"Оберіть правильне місто:",connErr:"Помилка з'єднання. Перевірте інтернет.",yourCity:"Ваше місто",
+ourProducts:"Наші товари",productsSub:"Добірка якісних товарів Zeus Shop",
+myBalance:"Мій баланс",balanceSub:"Фінанси акаунта Zeus Shop",curBalance:"Поточний баланс",demoBal:"Баланс вашого акаунта",
+myFunds:"Мої кошти",fundsText:"Тут надалі з'явиться історія операцій та інформація про платежі.",history:"Історія операцій",noOps:"Поки що операцій немає.",
+topup:"Поповнити",topupChoose:"Оберіть спосіб поповнення",amount:"Сума, $",continue:"Продовжити",close:"Закрити",
+pickMethod:"Оберіть спосіб поповнення",pickAmount:"Введіть суму",topupSoon:"Обрано: {m}, {a} $. Прийом платежів скоро буде підключено.",
+myProfile:"Мій профіль",profileSub:"Налаштування акаунта",user:"Користувач",notSet:"Не вказано",
+theme:"Тема оформлення",themeSub:"Обери зовнішній вигляд магазину",dark:"Темна",light:"Світла",
+language:"Мова",languageSub:"Мова інтерфейсу",myCity:"Моє місто",change:"Змінити",changeCity:"Змінити місто",enterCity:"Введіть місто",
+balance:"Баланс",myFundsShort:"Мої кошти",open:"Відкрити",logout:"Вийти з акаунта",
+navProducts:"Товари",navBalance:"Баланс",navProfile:"Профіль",
+privTitle:"Політика конфіденційності",privText:"Продовжуючи, ви погоджуєтесь з політикою конфіденційності Zeus Shop.",
+priv1:"Ми зберігаємо лише логін і місто",priv2:"Дані не передаються третім особам",priv3:"Ви можете видалити акаунт будь-коли",accept:"Приймаю",
+commTitle:"Ласкаво просимо до Zeus Shop!",commBig:"Найнижча комісія",commText:"У нас найменша комісія на ринку. Поповнюйте баланс і купуйте вигідно.",great:"Чудово",
+p1:"Преміальний продукт з якісним виконанням та увагою до деталей.",p2:"Надійне рішення для тих, хто цінує якість, зручність і стабільність.",p3:"Особлива серія з преміальним оформленням і високим рівнем виконання.",p4:"Продуманий комплект для користувачів, які обирають функціональність.",p5:"Практичний варіант з хорошою якістю та збалансованими характеристиками.",p6:"Яскрава колекція з оригінальною концепцією та стильним дизайном.",p7:"Флагманська лінійка для тих, хто віддає перевагу максимальній якості."},
+pl:{
+server:"Błąd serwera. Spróbuj ponownie.",copy:"Skopiuj adres",copied:"Adres skopiowany",iPaid:"Zapłaciłem",claimSent:"Zgłoszenie wysłane. Saldo zostanie zasilone po weryfikacji płatności.",payTo:"Wyślij równowartość {a} $ w {c} na ten adres:",payOpened:"Otwórz rachunek w Crypto Bot i zapłać dowolną kryptowalutą. Saldo zaktualizuje się automatycznie.",paidOk:"Płatność otrzymana, saldo zasilone!",txid:"TXID transakcji (opcjonalnie)",cpfail:"Nie udało się utworzyć rachunku. Spróbuj później.",limit:"Zbyt wiele nierozpatrzonych zgłoszeń.",
+noServer:"Serwer niedostępny. Otwórz sklep przez bota Telegram.",welcome:"Witamy",login:"Logowanie",register:"Rejestracja",enter:"Zaloguj się",create:"Utwórz konto",
+loginPh:"Login",passPh:"Hasło",confirmPh:"Potwierdź hasło",
+min3:"Login musi mieć min. 3 znaki",min4:"Hasło musi mieć min. 4 znaki",mismatch:"Hasła nie są takie same",taken:"Login jest zajęty",wrong:"Nieprawidłowy login lub hasło",
+cityTitle:"Podaj swoje miasto",cityPh:"Nazwa miasta",searching:"Szukamy miasta...",notFound:"Nie znaleziono miasta",pick:"Wybierz właściwe miasto:",connErr:"Błąd połączenia. Sprawdź internet.",yourCity:"Twoje miasto",
+ourProducts:"Nasze produkty",productsSub:"Wybór wysokiej jakości produktów Zeus Shop",
+myBalance:"Moje saldo",balanceSub:"Finanse konta Zeus Shop",curBalance:"Aktualne saldo",demoBal:"Saldo Twojego konta",
+myFunds:"Moje środki",fundsText:"W przyszłości pojawi się tu historia operacji i informacje o płatnościach.",history:"Historia operacji",noOps:"Brak operacji.",
+topup:"Doładuj",topupChoose:"Wybierz metodę doładowania",amount:"Kwota, $",continue:"Dalej",close:"Zamknij",
+pickMethod:"Wybierz metodę doładowania",pickAmount:"Wpisz kwotę",topupSoon:"Wybrano: {m}, {a} $. Obsługa płatności zostanie wkrótce podłączona.",
+myProfile:"Mój profil",profileSub:"Ustawienia konta",user:"Użytkownik",notSet:"Nie podano",
+theme:"Motyw",themeSub:"Wybierz wygląd sklepu",dark:"Ciemny",light:"Jasny",
+language:"Język",languageSub:"Język interfejsu",myCity:"Moje miasto",change:"Zmień",changeCity:"Zmień miasto",enterCity:"Wpisz miasto",
+balance:"Saldo",myFundsShort:"Moje środki",open:"Otwórz",logout:"Wyloguj się",
+navProducts:"Produkty",navBalance:"Saldo",navProfile:"Profil",
+privTitle:"Polityka prywatności",privText:"Kontynuując, akceptujesz politykę prywatności Zeus Shop.",
+priv1:"Przechowujemy tylko login i miasto",priv2:"Dane nie są udostępniane osobom trzecim",priv3:"Możesz usunąć konto w dowolnym momencie",accept:"Akceptuję",
+commTitle:"Witamy w Zeus Shop!",commBig:"Najniższa prowizja",commText:"Mamy najniższą prowizję na rynku. Doładuj saldo i kupuj korzystnie.",great:"Świetnie",
+p1:"Produkt premium o wysokiej jakości wykonania i dbałości o szczegóły.",p2:"Niezawodne rozwiązanie dla cenią jakość, wygodę i stabilność.",p3:"Wyjątkowa seria z premium wykończeniem i wysokim poziomem wykonania.",p4:"Przemyślany zestaw dla użytkowników, którzy stawiają na funkcjonalność.",p5:"Praktyczny wariant o dobrej jakości i zrównoważonych parametrach.",p6:"Wyrazista kolekcja z oryginalną koncepcją i stylowym designem.",p7:"Flagowa linia dla tych, którzy wybierają maksymalną jakość."}
+};
+T.pl.p2="Niezawodne rozwiązanie dla tych, którzy cenią jakość, wygodę i stabilność.";
+const t = k => (T[lang] && T[lang][k]) || T.ru[k] || k;
+
+/* Цены заданы в злотых (PLN). Курсы — приблизительные, меняй здесь. */
+const CURRENCY = {pl:{rate:1,sym:"zł",loc:"pl-PL"}, uk:{rate:11.5,sym:"грн",loc:"uk-UA"}, ru:{rate:21,sym:"₽",loc:"ru-RU"}};
+function price(pln) {
+  const c = CURRENCY[lang] || CURRENCY.ru;
+  return new Intl.NumberFormat(c.loc, {maximumFractionDigits:0}).format(Math.round(pln * c.rate)) + " " + c.sym;
+}
+const PRODUCTS = [
+ ["crown","Zeus Crystal Premium","p1","Premium",80],["shield-check","Zeus THC","p2","Quality",50],
+ ["gem","MDMA Golden Edition","p3","Exclusive",50],["zap","Thunder Cocaine","p4","Popular",50],
+ ["star","Zeus T4C","p5","Standard",70],["flame","Mefedron Edition","p6","Limited",70],
+ ["package","Zeus Xanax","p7","Ultimate",90]];
+
+function renderProducts() {
+  $("productsGrid").innerHTML = PRODUCTS.map(p => `
+    <article class="product">
+      <div class="product-icon">
+        <img class="plogo" src="logo.jpg" alt="" onerror="this.style.display='none'">
+        <i data-lucide="${p[0]}"></i>
+      </div>
+      <h3>${p[1]}</h3><p>${t(p[2])}</p>
+      <div class="price"><i data-lucide="tag"></i>${price(p[4])}</div>
+      <span class="product-tag"><i data-lucide="sparkle"></i>${p[3]}</span>
+    </article>`).join("");
+}
+
+function renderMethods() {
+  const list = [["tonkeeper","diamond","Tonkeeper","Bitcoin · BTC"],["cryptobot","bot","CryptoBot","Telegram · All crypto"],["trustwallet","shield-check","Trust Wallet","TON"]];
+  $("methods").innerHTML = list.map(m => `
+    <button class="method ${method===m[0]?"active":""}" onclick="pickMethod('${m[0]}')">
+      <span class="m-ico"><i data-lucide="${m[1]}"></i></span>
+      <span><strong>${m[2]}</strong><small>${m[3]}</small></span>
+      <i class="check" data-lucide="check-circle-2"></i>
+    </button>`).join("");
+}
+
+function applyLang() {
+  document.documentElement.lang = lang || "ru";
+  document.querySelectorAll("[data-i18n]").forEach(e => e.textContent = t(e.dataset.i18n));
+  document.querySelectorAll("[data-ph]").forEach(e => e.placeholder = t(e.dataset.ph));
+  $("langSelect").value = lang || "ru";
+  setMode(mode);
+  renderProducts(); renderMethods(); updateProfile();
+  icons();
+}
+
+function chooseLang(l, fromProfile) {
+  lang = l;
+  localStorage.setItem("zeusLang", l);
+  applyLang();
+  if (!fromProfile) { $("langScreen").classList.add("hidden"); route(); }
+}
+
+/* ===== Капча ===== */
+function newCaptcha() {
+  const a = 2 + Math.floor(Math.random()*8), b = 2 + Math.floor(Math.random()*8);
+  captchaAnswer = a + b;
+  $("captchaQ").textContent = a + " + " + b + " = ?";
+  $("captchaInput").value = "";
+  $("captchaMessage").textContent = "";
+}
+
+function checkCaptcha() {
+  if (Number($("captchaInput").value) === captchaAnswer) {
+    sessionStorage.setItem("zeusCaptcha","1");
+    $("captchaScreen").classList.add("hidden");
+    route();
+  } else {
+    $("captchaMessage").textContent = "✕";
+    newCaptcha();
+    $("captchaMessage").textContent = "✕";
+  }
+}
+
+/* ===== Баннеры ===== */
+function acceptPrivacy() {
+  localStorage.setItem("zeusPrivacy","1");
+  $("privacyBanner").classList.add("hidden");
+  route();
+}
+
+function closeCommission() { $("commissionBanner").classList.add("hidden"); }
+
+/* ===== Пополнение ===== */
+function openTopup() { method = null; $("payBox").classList.add("hidden"); $("topupAmount").value = ""; $("topupMessage").textContent = ""; renderMethods(); icons(); $("topupModal").classList.remove("hidden"); }
+function closeTopup() { $("topupModal").classList.add("hidden"); }
+function pickMethod(m) { method = m; renderMethods(); icons(); }
+let payInfo = null, pollTimer = null;
+async function confirmTopup() {
+  const amount = Number($("topupAmount").value), msg = $("topupMessage");
+  $("payBox").classList.add("hidden");
+  if (!method) { msg.textContent = t("pickMethod"); return; }
+  if (!(amount >= 1)) { msg.textContent = t("pickAmount"); return; }
+  msg.textContent = "…";
+  try {
+    if (method === "cryptobot") {
+      const d = await api("/api/topup/cryptobot", {amount});
+      msg.textContent = t("payOpened");
+      try { Telegram.WebApp.openTelegramLink(d.url); } catch(e) { window.open(d.url, "_blank"); }
+      pollBalance();
+    } else {
+      const w = (await api("/api/methods"))[method];
+      payInfo = {method, amount};
+      $("payNote").textContent = t("payTo").replace("{a}", amount).replace("{c}", w.coin);
+      $("payAddr").textContent = w.address;
+      $("payBox").classList.remove("hidden");
+      msg.textContent = "";
+    }
+  } catch(e) { msg.textContent = t(e.code || "noServer"); }
+}
+
+function copyAddr() {
+  const a = $("payAddr").textContent;
+  const done = () => { $("topupMessage").textContent = t("copied"); };
+  if (navigator.clipboard) navigator.clipboard.writeText(a).then(done, done);
+  else { const i = document.createElement("input"); i.value = a; document.body.appendChild(i); i.select(); document.execCommand("copy"); i.remove(); done(); }
+}
+
+async function claimPay() {
+  try {
+    await api("/api/topup/claim", {method: payInfo.method, amount: payInfo.amount, txid: $("payTx").value.trim()});
+    $("payBox").classList.add("hidden"); $("payTx").value = "";
+    $("topupMessage").textContent = t("claimSent");
+  } catch(e) { $("topupMessage").textContent = t(e.code || "noServer"); }
+}
+
+function pollBalance() {
+  clearInterval(pollTimer);
+  let n = 0;
+  pollTimer = setInterval(async () => {
+    n++;
+    try {
+      const u = (await api("/api/me")).user;
+      if (ME && u.balance > ME.balance) {
+        ME = u; updateProfile(); clearInterval(pollTimer);
+        $("topupMessage").textContent = t("paidOk");
+      }
+    } catch(e) {}
+    if (n > 120) clearInterval(pollTimer);
+  }, 5000);
+}
+
+/* ===== Сервер ===== */
+try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch(e) {}
+const qApi = new URLSearchParams(location.search).get("api");
+if (qApi) localStorage.setItem("zeusApi", qApi.replace(/\/+$/, ""));
+const API = () => localStorage.getItem("zeusApi") || "";
+let TOKEN = localStorage.getItem("zeusToken") || "", ME = null;
+
+async function api(path, body) {
+  if (!API()) throw Object.assign(new Error("noapi"), {code: "noServer"});
+  const opt = {headers: {"Content-Type": "application/json"}};
+  if (TOKEN) opt.headers.Authorization = "Bearer " + TOKEN;
+  if (body) { opt.method = "POST"; opt.body = JSON.stringify(body); }
+  const r = await fetch(API() + path, opt);
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(d.error || "error"), {status: r.status, code: d.error || "noServer"});
+  return d;
+}
+
+function setMode(value) {
+  mode = value;
+  $("loginTab").classList.toggle("active", value==="login");
+  $("registerTab").classList.toggle("active", value==="register");
+  $("confirmField").classList.toggle("hidden", value!=="register");
+  $("authButton").textContent = t(value==="register" ? "create" : "enter");
+  $("authMessage").textContent = "";
+}
+
+async function submitAuth() {
+  const login = $("username").value.trim(), password = $("password").value,
+        confirm = $("confirmPassword").value, msg = $("authMessage");
+  if (login.length < 3) { msg.textContent = t("min3"); return; }
+  if (password.length < 4) { msg.textContent = t("min4"); return; }
+  if (mode==="register" && password!==confirm) { msg.textContent = t("mismatch"); return; }
+  try {
+    const d = await api(mode==="register" ? "/api/register" : "/api/login", {login, password});
+    TOKEN = d.token; ME = d.user;
+    localStorage.setItem("zeusToken", TOKEN);
+    $("authScreen").classList.add("hidden");
+    if (ME.city) enterApp(); else $("cityScreen").classList.remove("hidden");
+  } catch(e) { msg.textContent = t(e.code || "noServer"); }
+}
+
+/* ===== Поиск городов ===== */
+async function findCities(query, container, message, callback) {
+  if (query.length < 2) return;
+  message.textContent = t("searching");
+  container.innerHTML = "";
+  try {
+    const url = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=8&featuretype=city&countrycodes=ua,ru,pl"
+      + "&accept-language=" + lang + "&q=" + encodeURIComponent(query);
+    const results = await (await fetch(url)).json();
+    container.innerHTML = "";
+    if (!results.length) { message.textContent = t("notFound"); return; }
+    message.textContent = t("pick");
+    results.forEach(place => {
+      const a = place.address || {};
+      const name = a.city || a.town || a.village || a.municipality || place.name;
+      const country = a.country || "";
+      const item = document.createElement("div");
+      item.className = "city-result";
+      item.innerHTML = '<i data-lucide="map-pin"></i><span></span>';
+      item.querySelector("span").textContent = name + ", " + country;
+      item.onclick = () => callback({name, country});
+      container.appendChild(item);
+    });
+    icons();
+  } catch(e) { message.textContent = t("connErr"); }
+}
+
+function bindCity(inputId, resId, msgId, cb) {
+  $(inputId).addEventListener("input", function() {
+    clearTimeout(cityTimer);
+    const v = this.value.trim();
+    cityTimer = setTimeout(() => findCities(v, $(resId), $(msgId), cb), 500);
+  });
+}
+
+async function setCity(city) {
+  try { ME = (await api("/api/me", {city: city.name, country: city.country})).user; } catch(e) {}
+}
+
+async function saveFirstCity(city) { await setCity(city); $("cityScreen").classList.add("hidden"); enterApp(); }
+async function saveNewCity(city) {
+  await setCity(city);
+  $("cityChangeBox").classList.add("hidden");
+  $("newCityInput").value = ""; $("newCityResults").innerHTML = "";
+  updateProfile();
+}
+function openCityChange() { $("cityChangeBox").classList.toggle("hidden"); }
+
+bindCity("cityInput","cityResults","cityMessage",saveFirstCity);
+bindCity("newCityInput","newCityResults","newCityMessage",saveNewCity);
+
+/* ===== Приложение ===== */
+function enterApp() {
+  $("authScreen").classList.add("hidden");
+  $("cityScreen").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("bottomNav").classList.remove("hidden");
+  updateProfile();
+  showPage("products");
+  if (ME && !ME.seenCommission) {
+    ME.seenCommission = true;
+    api("/api/me", {seenCommission: true}).catch(() => {});
+    $("commissionBanner").classList.remove("hidden");
+  }
+  icons();
+}
+
+function updateProfile() {
+  if (!ME) return;
+  $("profileName").textContent = ME.login;
+  $("profileCity").textContent = ME.city || t("notSet");
+  $("currentCity").textContent = ME.city || t("notSet");
+  $("headerCity").textContent = ME.city || t("yourCity");
+  $("balanceValue").textContent = Number(ME.balance || 0).toFixed(2) + " $";
+  $("themeSelect").value = ME.theme || "dark";
+  document.body.classList.toggle("light", ME.theme==="light");
+}
+
+function showPage(page) {
+  ["products","balance","profile"].forEach(n => $(n+"Page").classList.toggle("hidden", n!==page));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page===page));
+  icons();
+}
+
+function changeTheme(theme) {
+  if (!ME) return;
+  ME.theme = theme;
+  api("/api/me", {theme}).catch(() => {});
+  document.body.classList.toggle("light", theme==="light");
+}
+
+function logout() {
+  TOKEN = ""; ME = null;
+  localStorage.removeItem("zeusToken");
+  $("app").classList.add("hidden");
+  $("bottomNav").classList.add("hidden");
+  $("authScreen").classList.remove("hidden");
+  $("username").value = $("password").value = $("confirmPassword").value = "";
+  setMode("login");
+}
+
+/* ===== Порядок запуска: капча → язык → политика → вход ===== */
+async function route() {
+  if (!sessionStorage.getItem("zeusCaptcha")) { newCaptcha(); $("captchaScreen").classList.remove("hidden"); }
+  else if (!lang) { $("langScreen").classList.remove("hidden"); }
+  else if (!localStorage.getItem("zeusPrivacy")) { $("privacyBanner").classList.remove("hidden"); }
+  else {
+    if (TOKEN && !ME) {
+      try { ME = (await api("/api/me")).user; }
+      catch(e) { if (e.status===401) { TOKEN = ""; localStorage.removeItem("zeusToken"); } }
+    }
+    if (ME) { if (ME.city) enterApp(); else $("cityScreen").classList.remove("hidden"); }
+    else {
+      $("authScreen").classList.remove("hidden");
+      try { await api("/api/health"); } catch(e) { $("authMessage").textContent = t("noServer"); }
+    }
+  }
+  icons();
+}
+
+applyLang();
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    $("loader").style.opacity = "0";
+    setTimeout(() => { $("loader").remove(); route(); }, 700);
+  }, 2600);
+});
+</script>
+</body>
+</html>
