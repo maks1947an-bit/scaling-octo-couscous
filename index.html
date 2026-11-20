@@ -76,6 +76,7 @@ svg.lucide{width:18px;height:18px;flex-shrink:0}
 /* Товары */
 .products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .product{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:16px;transition:.2s}
+.product{cursor:pointer}
 .product:hover{border-color:var(--gold);transform:translateY(-2px)}
 .product-icon{position:relative;height:105px;border-radius:11px;background:linear-gradient(135deg,#28221a,#100f0d);display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--gold)}
 .product-icon>svg{width:43px;height:43px}
@@ -86,6 +87,7 @@ svg.lucide{width:18px;height:18px;flex-shrink:0}
 .product-tag svg{width:11px;height:11px}
 
 .price{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:18px;font-weight:bold;color:var(--gold2)}
+.price small{margin-left:auto;font-size:11px;font-weight:normal;color:var(--muted)}
 .price svg{width:15px;height:15px}
 .price+.product-tag{margin-top:6px}
 /* Баланс */
@@ -199,6 +201,20 @@ select{background:var(--card2);color:var(--text);padding:10px;border:1px solid v
     <div class="big-percent"><i data-lucide="trending-down" style="vertical-align:middle"></i> <span data-i18n="commBig"></span></div>
     <p data-i18n="commText"></p>
     <button class="main-btn" onclick="closeCommission()"><i data-lucide="sparkles"></i><span data-i18n="great"></span></button>
+  </div>
+</div>
+
+<!-- Карточка товара -->
+<div class="overlay hidden" id="productModal" onclick="if(event.target===this)closeProduct()">
+  <div class="card banner">
+    <div class="banner-icon" id="pmIcon"></div>
+    <h2 id="pmName"></h2>
+    <p id="pmDesc"></p>
+    <div class="big-percent" id="pmPrice" style="margin-top:14px"></div>
+    <button class="main-btn" onclick="buyProduct()"><i data-lucide="shopping-cart"></i><span data-i18n="buy"></span></button>
+    <button class="main-btn hidden" id="pmTopup" onclick="closeProduct();showPage('balance');openTopup()"><i data-lucide="circle-plus"></i><span data-i18n="topup"></span></button>
+    <div class="message" id="pmMessage"></div>
+    <button class="cancel-btn" onclick="closeProduct()" data-i18n="close"></button>
   </div>
 </div>
 
@@ -354,7 +370,7 @@ const icons = () => { if (window.lucide) lucide.createIcons(); };
 /* ===== Переводы ===== */
 const T = {
 ru:{
-server:"Ошибка сервера. Попробуйте ещё раз.",copy:"Скопировать адрес",copied:"Адрес скопирован",iPaid:"Я оплатил",claimSent:"Заявка отправлена. Баланс пополнится после проверки платежа.",payTo:"Отправьте эквивалент {a} $ в {c} на этот адрес:",payOpened:"Откройте счёт в Crypto Bot и оплатите любой криптовалютой. Баланс обновится автоматически.",paidOk:"Оплата получена, баланс пополнен!",txid:"TXID транзакции (необязательно)",cpfail:"Не удалось создать счёт. Попробуйте позже.",limit:"Слишком много необработанных заявок.",
+buy:"Купить",buyDone:"Заказ оформлен! Мы свяжемся с вами.",noFunds:"Недостаточно средств. Нужно {p} $ на балансе.",server:"Ошибка сервера. Попробуйте ещё раз.",copy:"Скопировать адрес",copied:"Адрес скопирован",iPaid:"Я оплатил",claimSent:"Заявка отправлена. Баланс пополнится после проверки платежа.",payTo:"Отправьте эквивалент {a} $ в {c} на этот адрес:",payOpened:"Откройте счёт в Crypto Bot и оплатите любой криптовалютой. Баланс обновится автоматически.",paidOk:"Оплата получена, баланс пополнен!",txid:"TXID транзакции (необязательно)",cpfail:"Не удалось создать счёт. Попробуйте позже.",limit:"Слишком много необработанных заявок.",
 noServer:"Сервер недоступен. Откройте магазин через Telegram-бота.",welcome:"Добро пожаловать",login:"Вход",register:"Регистрация",enter:"Войти",create:"Создать аккаунт",
 loginPh:"Логин",passPh:"Пароль",confirmPh:"Подтверждение пароля",
 min3:"Минимум 3 символа в логине",min4:"Минимум 4 символа в пароле",mismatch:"Пароли не совпадают",taken:"Логин уже занят",wrong:"Неверный логин или пароль",
@@ -374,7 +390,7 @@ priv1:"Мы храним только логин и город",priv2:"Данн�
 commTitle:"Добро пожаловать в Zeus Shop!",commBig:"Самая низкая комиссия",commText:"У нас самая маленькая комиссия на рынке. Пополняйте баланс и покупайте выгодно.",great:"Отлично",
 p1:"Премиальный продукт с качественным исполнением и вниманием к деталям.",p2:"Надёжное решение для тех, кто ценит качество, удобство и стабильность.",p3:"Особенная серия с премиальным оформлением и высоким уровнем исполнения.",p4:"Продуманный комплект для пользователей, которые выбирают функциональность.",p5:"Практичный вариант с хорошим качеством и сбалансированными характеристиками.",p6:"Яркая коллекция с оригинальной концепцией и стильным дизайном.",p7:"Флагманская линейка для тех, кто предпочитает максимальное качество."},
 uk:{
-server:"Помилка сервера. Спробуйте ще раз.",copy:"Скопіювати адресу",copied:"Адресу скопійовано",iPaid:"Я оплатив",claimSent:"Заявку надіслано. Баланс поповниться після перевірки платежу.",payTo:"Надішліть еквівалент {a} $ у {c} на цю адресу:",payOpened:"Відкрийте рахунок у Crypto Bot і сплатіть будь-якою криптовалютою. Баланс оновиться автоматично.",paidOk:"Оплату отримано, баланс поповнено!",txid:"TXID транзакції (необов'язково)",cpfail:"Не вдалося створити рахунок. Спробуйте пізніше.",limit:"Забагато необроблених заявок.",
+buy:"Купити",buyDone:"Замовлення оформлено! Ми зв'яжемось з вами.",noFunds:"Недостатньо коштів. Потрібно {p} $ на балансі.",server:"Помилка сервера. Спробуйте ще раз.",copy:"Скопіювати адресу",copied:"Адресу скопійовано",iPaid:"Я оплатив",claimSent:"Заявку надіслано. Баланс поповниться після перевірки платежу.",payTo:"Надішліть еквівалент {a} $ у {c} на цю адресу:",payOpened:"Відкрийте рахунок у Crypto Bot і сплатіть будь-якою криптовалютою. Баланс оновиться автоматично.",paidOk:"Оплату отримано, баланс поповнено!",txid:"TXID транзакції (необов'язково)",cpfail:"Не вдалося створити рахунок. Спробуйте пізніше.",limit:"Забагато необроблених заявок.",
 noServer:"Сервер недоступний. Відкрийте магазин через Telegram-бота.",welcome:"Ласкаво просимо",login:"Вхід",register:"Реєстрація",enter:"Увійти",create:"Створити акаунт",
 loginPh:"Логін",passPh:"Пароль",confirmPh:"Підтвердження пароля",
 min3:"Мінімум 3 символи в логіні",min4:"Мінімум 4 символи в паролі",mismatch:"Паролі не збігаються",taken:"Логін уже зайнятий",wrong:"Невірний логін або пароль",
@@ -394,7 +410,7 @@ priv1:"Ми зберігаємо лише логін і місто",priv2:"Да�
 commTitle:"Ласкаво просимо до Zeus Shop!",commBig:"Найнижча комісія",commText:"У нас найменша комісія на ринку. Поповнюйте баланс і купуйте вигідно.",great:"Чудово",
 p1:"Преміальний продукт з якісним виконанням та увагою до деталей.",p2:"Надійне рішення для тих, хто цінує якість, зручність і стабільність.",p3:"Особлива серія з преміальним оформленням і високим рівнем виконання.",p4:"Продуманий комплект для користувачів, які обирають функціональність.",p5:"Практичний варіант з хорошою якістю та збалансованими характеристиками.",p6:"Яскрава колекція з оригінальною концепцією та стильним дизайном.",p7:"Флагманська лінійка для тих, хто віддає перевагу максимальній якості."},
 pl:{
-server:"Błąd serwera. Spróbuj ponownie.",copy:"Skopiuj adres",copied:"Adres skopiowany",iPaid:"Zapłaciłem",claimSent:"Zgłoszenie wysłane. Saldo zostanie zasilone po weryfikacji płatności.",payTo:"Wyślij równowartość {a} $ w {c} na ten adres:",payOpened:"Otwórz rachunek w Crypto Bot i zapłać dowolną kryptowalutą. Saldo zaktualizuje się automatycznie.",paidOk:"Płatność otrzymana, saldo zasilone!",txid:"TXID transakcji (opcjonalnie)",cpfail:"Nie udało się utworzyć rachunku. Spróbuj później.",limit:"Zbyt wiele nierozpatrzonych zgłoszeń.",
+buy:"Kup",buyDone:"Zamówienie złożone! Skontaktujemy się z Tobą.",noFunds:"Za mało środków. Potrzeba {p} $ na saldzie.",server:"Błąd serwera. Spróbuj ponownie.",copy:"Skopiuj adres",copied:"Adres skopiowany",iPaid:"Zapłaciłem",claimSent:"Zgłoszenie wysłane. Saldo zostanie zasilone po weryfikacji płatności.",payTo:"Wyślij równowartość {a} $ w {c} na ten adres:",payOpened:"Otwórz rachunek w Crypto Bot i zapłać dowolną kryptowalutą. Saldo zaktualizuje się automatycznie.",paidOk:"Płatność otrzymana, saldo zasilone!",txid:"TXID transakcji (opcjonalnie)",cpfail:"Nie udało się utworzyć rachunku. Spróbuj później.",limit:"Zbyt wiele nierozpatrzonych zgłoszeń.",
 noServer:"Serwer niedostępny. Otwórz sklep przez bota Telegram.",welcome:"Witamy",login:"Logowanie",register:"Rejestracja",enter:"Zaloguj się",create:"Utwórz konto",
 loginPh:"Login",passPh:"Hasło",confirmPh:"Potwierdź hasło",
 min3:"Login musi mieć min. 3 znaki",min4:"Hasło musi mieć min. 4 znaki",mismatch:"Hasła nie są takie same",taken:"Login jest zajęty",wrong:"Nieprawidłowy login lub hasło",
@@ -417,27 +433,34 @@ p1:"Produkt premium o wysokiej jakości wykonania i dbałości o szczegóły.",p
 T.pl.p2="Niezawodne rozwiązanie dla tych, którzy cenią jakość, wygodę i stabilność.";
 const t = k => (T[lang] && T[lang][k]) || T.ru[k] || k;
 
-/* Цены заданы в злотых (PLN). Курсы — приблизительные, меняй здесь. */
-const CURRENCY = {pl:{rate:1,sym:"zł",loc:"pl-PL"}, uk:{rate:11.5,sym:"грн",loc:"uk-UA"}, ru:{rate:21,sym:"₽",loc:"ru-RU"}};
+/* Цены заданы в злотых (PLN), мин. чек 100 zł. Курсы приблизительные — меняй здесь (и в bot.py). */
+const PLN_PER_USD = 3.7;
+const CURRENCY = {
+  pl:{rate:1,    step:1,  sym:"zł",  loc:"pl-PL"},
+  uk:{rate:11.5, step:10, sym:"грн", loc:"uk-UA"},
+  ru:{rate:21,   step:50, sym:"₽",   loc:"ru-RU"}
+};
 function price(pln) {
   const c = CURRENCY[lang] || CURRENCY.ru;
-  return new Intl.NumberFormat(c.loc, {maximumFractionDigits:0}).format(Math.round(pln * c.rate)) + " " + c.sym;
+  const v = Math.round(pln * c.rate / c.step) * c.step;
+  return new Intl.NumberFormat(c.loc, {maximumFractionDigits:0}).format(v) + " " + c.sym;
 }
+const usd = pln => (Math.round(pln / PLN_PER_USD * 100) / 100).toFixed(2);
 const PRODUCTS = [
- ["crown","Zeus Crystal Premium","p1","Premium",80],["shield-check","Zeus THC","p2","Quality",50],
- ["gem","MDMA Golden Edition","p3","Exclusive",50],["zap","Thunder Cocaine","p4","Popular",50],
- ["star","Zeus T4C","p5","Standard",70],["flame","Mefedron Edition","p6","Limited",70],
- ["package","Zeus Xanax","p7","Ultimate",90]];
+ ["crown","Zeus Cocaine","p1","Premium",160],["shield-check","Zeus Xanax","p2","Quality",100],
+ ["gem","Golden MDMA","p3","Exclusive",100],["zap","Thunder Crystal","p4","Popular",100],
+ ["star","Zeus Standard Hash","p5","Standard",140],["flame","Inferno THC 48%","p6","Limited",140],
+ ["package","Zeus Mefedron","p7","Ultimate",180]];
 
 function renderProducts() {
-  $("productsGrid").innerHTML = PRODUCTS.map(p => `
-    <article class="product">
+  $("productsGrid").innerHTML = PRODUCTS.map((p, i) => `
+    <article class="product" onclick="openProduct(${i})">
       <div class="product-icon">
         <img class="plogo" src="logo.jpg" alt="" onerror="this.style.display='none'">
         <i data-lucide="${p[0]}"></i>
       </div>
       <h3>${p[1]}</h3><p>${t(p[2])}</p>
-      <div class="price"><i data-lucide="tag"></i>${price(p[4])}</div>
+      <div class="price"><i data-lucide="tag"></i>${price(p[4])}<small>≈ ${usd(p[4])} $</small></div>
       <span class="product-tag"><i data-lucide="sparkle"></i>${p[3]}</span>
     </article>`).join("");
 }
@@ -514,7 +537,7 @@ async function confirmTopup() {
     if (method === "cryptobot") {
       const d = await api("/api/topup/cryptobot", {amount});
       msg.textContent = t("payOpened");
-      try { Telegram.WebApp.openTelegramLink(d.url); } catch(e) { window.open(d.url, "_blank"); }
+      try { /^https:\/\/t\.me\//.test(d.url) ? Telegram.WebApp.openTelegramLink(d.url) : Telegram.WebApp.openLink(d.url); } catch(e) { window.open(d.url, "_blank"); }
       pollBalance();
     } else {
       const w = (await api("/api/methods"))[method];
@@ -524,7 +547,7 @@ async function confirmTopup() {
       $("payBox").classList.remove("hidden");
       msg.textContent = "";
     }
-  } catch(e) { msg.textContent = t(e.code || "noServer"); }
+  } catch(e) { msg.textContent = t(e.code || "noServer") + (e.detail ? " [" + e.detail + "]" : ""); }
 }
 
 function copyAddr() {
@@ -558,6 +581,38 @@ function pollBalance() {
   }, 5000);
 }
 
+/* ===== Карточка товара ===== */
+let curProduct = null, buying = false;
+function openProduct(i) {
+  curProduct = PRODUCTS[i];
+  $("pmIcon").innerHTML = '<i data-lucide="' + curProduct[0] + '"></i>';
+  $("pmName").textContent = curProduct[1];
+  $("pmDesc").textContent = t(curProduct[2]);
+  $("pmPrice").innerHTML = price(curProduct[4]) + '<div style="font-size:12px;color:var(--muted);font-weight:normal;margin-top:4px">≈ ' + usd(curProduct[4]) + ' $</div>';
+  $("pmMessage").textContent = "";
+  $("pmTopup").classList.add("hidden");
+  $("productModal").classList.remove("hidden");
+  icons();
+}
+function closeProduct() { $("productModal").classList.add("hidden"); }
+async function buyProduct() {
+  if (buying || !curProduct) return;
+  buying = true;
+  const msg = $("pmMessage");
+  msg.textContent = "…";
+  try {
+    const d = await api("/api/buy", {product: curProduct[2]});
+    ME = d.user; updateProfile();
+    msg.textContent = t("buyDone");
+  } catch(e) {
+    if (e.code === "noFunds") {
+      msg.textContent = t("noFunds").replace("{p}", usd(curProduct[4]));
+      $("pmTopup").classList.remove("hidden");
+    } else msg.textContent = t(e.code || "noServer") + (e.detail ? " [" + e.detail + "]" : "");
+  }
+  buying = false;
+}
+
 /* ===== Сервер ===== */
 try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch(e) {}
 const qApi = new URLSearchParams(location.search).get("api");
@@ -570,9 +625,11 @@ async function api(path, body) {
   const opt = {headers: {"Content-Type": "application/json"}};
   if (TOKEN) opt.headers.Authorization = "Bearer " + TOKEN;
   if (body) { opt.method = "POST"; opt.body = JSON.stringify(body); }
-  const r = await fetch(API() + path, opt);
+  let r;
+  try { r = await fetch(API() + path, opt); }
+  catch(err) { throw Object.assign(err, {code: "noServer", detail: "network"}); }
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(d.error || "error"), {status: r.status, code: d.error || "noServer"});
+  if (!r.ok) throw Object.assign(new Error(d.error || "error"), {status: r.status, code: d.error || "noServer", detail: d.detail || ("HTTP " + r.status)});
   return d;
 }
 
