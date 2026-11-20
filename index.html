@@ -112,6 +112,33 @@ svg.lucide{width:18px;height:18px;flex-shrink:0}
 
 .addr{font-family:monospace;font-size:12px;word-break:break-all;background:var(--card2);border:1px dashed var(--gold);border-radius:10px;padding:13px;margin:12px 0;color:var(--gold2)}
 .pay-box .main-btn{margin-top:0;margin-bottom:10px}
+.overlay .card{max-height:92vh;overflow-y:auto}
+.sort-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;color:var(--gold)}
+.sort-row select{flex:1}
+.stars{color:var(--gold2);font-size:12px;letter-spacing:2px;margin-top:8px}
+.cart-bar{position:fixed;left:14px;right:14px;bottom:88px;z-index:19;display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:13px;background:linear-gradient(110deg,#ae803c,#e1b668);color:#15110b;font-weight:bold;box-shadow:0 8px 30px #0008;cursor:pointer}
+.cart-bar svg{width:20px;height:20px}.cart-bar .grow{flex:1}
+.cart-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.cart-row>svg{color:var(--gold)}
+.cr-name{flex:1;font-size:14px}.cr-name small{display:block;color:var(--muted);margin-top:3px}
+.qty{display:flex;align-items:center;gap:10px}
+.qty button{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--gold2);font-size:16px}
+.sum-row{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;color:var(--muted)}
+.sum-row b{color:var(--text)}
+.sum-row.total{font-size:18px;border-top:1px solid var(--border);margin-top:6px}
+.sum-row.total b,.size-badge{color:var(--gold2)!important}
+.hint{font-size:12px;color:var(--muted);text-align:center;margin:10px 0;line-height:1.5}
+.hint.ok{color:var(--gold2)}
+.wheel-wrap{position:relative;width:260px;max-width:100%;margin:22px auto 16px}
+.wheel-wrap svg{width:100%;display:block;border-radius:50%;border:3px solid var(--gold);box-shadow:0 0 30px #c99b5040;transition:transform 4s cubic-bezier(.17,.67,.12,1)}
+.wheel-pointer{position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:2;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:20px solid var(--gold2)}
+.status{font-size:13px;color:var(--gold2);text-align:center;margin:10px 0;min-height:18px;line-height:1.6}
+.pri-list{list-style:none;margin:14px 0}
+.pri-list li{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:9px}
+.pri-list svg{color:var(--gold)}
+.priority-card{border-color:var(--gold)}
+.main-btn:disabled{opacity:.5}
+.ghost-btn{background:transparent!important;border:1px solid var(--gold)!important;color:var(--gold2)!important}
 /* Профиль */
 .profile-head{display:flex;align-items:center;gap:15px;background:var(--card);border:1px solid var(--border);border-radius:15px;padding:20px;margin-bottom:18px}
 .avatar{width:55px;height:55px;background:#322719;color:var(--gold2);display:flex;justify-content:center;align-items:center;border-radius:50%}
@@ -209,12 +236,29 @@ select{background:var(--card2);color:var(--text);padding:10px;border:1px solid v
   <div class="card banner">
     <div class="banner-icon" id="pmIcon"></div>
     <h2 id="pmName"></h2>
-    <p id="pmDesc"></p>
+    <div class="stars" id="pmStars" style="text-align:center"></div>
+    <p id="pmDesc" style="margin-top:8px"></p>
     <div class="big-percent" id="pmPrice" style="margin-top:14px"></div>
     <button class="main-btn" onclick="buyProduct()"><i data-lucide="shopping-cart"></i><span data-i18n="buy"></span></button>
+    <button class="main-btn ghost-btn" onclick="addToCart(curProduct[2])"><i data-lucide="plus"></i><span data-i18n="addCart"></span></button>
     <button class="main-btn hidden" id="pmTopup" onclick="closeProduct();showPage('balance');openTopup()"><i data-lucide="circle-plus"></i><span data-i18n="topup"></span></button>
     <div class="message" id="pmMessage"></div>
     <button class="cancel-btn" onclick="closeProduct()" data-i18n="close"></button>
+  </div>
+</div>
+
+<!-- Корзина -->
+<div class="overlay hidden" id="cartModal" onclick="if(event.target===this)closeCart()">
+  <div class="card banner">
+    <div class="banner-icon"><i data-lucide="shopping-cart"></i></div>
+    <h2 data-i18n="cart"></h2>
+    <div id="cartItems"></div>
+    <div id="cartSummary"></div>
+    <button class="main-btn" id="cartCheckout" onclick="checkoutCart()"><i data-lucide="credit-card"></i><span data-i18n="checkout"></span></button>
+    <button class="main-btn hidden" id="cartTopup" onclick="closeCart();showPage('balance');openTopup()"><i data-lucide="circle-plus"></i><span data-i18n="topup"></span></button>
+    <div class="message" id="cartMsg"></div>
+    <button class="cancel-btn" onclick="clearCart()" data-i18n="clear"></button>
+    <button class="cancel-btn" onclick="closeCart()" data-i18n="close"></button>
   </div>
 </div>
 
@@ -283,7 +327,50 @@ select{background:var(--card2);color:var(--text);padding:10px;border:1px solid v
   <section class="container page-section" id="productsPage">
     <h1 class="section-title"><i data-lucide="store"></i><span data-i18n="ourProducts"></span></h1>
     <p class="section-subtitle" data-i18n="productsSub"></p>
+    <div class="sort-row"><i data-lucide="arrow-up-down"></i>
+      <select id="sortSelect" onchange="renderProducts()">
+        <option value="def" data-i18n="sortDef"></option>
+        <option value="qual" data-i18n="sortQual"></option>
+        <option value="asc" data-i18n="sortAsc"></option>
+        <option value="desc" data-i18n="sortDesc"></option>
+      </select>
+    </div>
     <div class="products" id="productsGrid"></div>
+  </section>
+
+  <section class="container page-section hidden" id="bonusPage">
+    <h1 class="section-title"><i data-lucide="gift"></i><span data-i18n="bonuses"></span></h1>
+    <p class="section-subtitle" data-i18n="bonusSub"></p>
+
+    <div class="info-card">
+      <h3><i data-lucide="dices"></i><span data-i18n="wheelTitle"></span></h3>
+      <p data-i18n="wheelDesc"></p>
+      <div class="wheel-wrap"><div class="wheel-pointer"></div><svg id="wheelSvg" viewBox="-100 -100 200 200"></svg></div>
+      <button class="main-btn" id="spinBtn" onclick="spinWheel()"><i data-lucide="rotate-cw"></i><span data-i18n="spin"></span></button>
+      <div class="message" id="spinMsg"></div>
+      <div class="status" id="wheelStatus"></div>
+    </div>
+
+    <div class="info-card">
+      <h3><i data-lucide="receipt"></i><span data-i18n="couponTitle"></span></h3>
+      <p id="couponStatus" style="color:var(--gold2)"></p>
+      <p data-i18n="checksInfo" style="margin-top:8px"></p>
+    </div>
+
+    <div class="info-card priority-card">
+      <h3><i data-lucide="crown"></i><span data-i18n="priTitle"></span></h3>
+      <p data-i18n="priDesc"></p>
+      <ul class="pri-list">
+        <li><i data-lucide="zap"></i><span data-i18n="pri1"></span></li>
+        <li><i data-lucide="headset"></i><span data-i18n="pri2"></span></li>
+        <li><i data-lucide="list-ordered"></i><span data-i18n="pri3"></span></li>
+      </ul>
+      <div class="status" id="priStatus"></div>
+      <button class="main-btn" id="priBtn" onclick="buyPriority()"><i data-lucide="badge-check"></i><span id="priBtnText"></span></button>
+      <button class="main-btn ghost-btn hidden" id="priManager" onclick="openManager()"><i data-lucide="headset"></i><span data-i18n="manager"></span></button>
+      <button class="main-btn hidden" id="priTopup" onclick="showPage('balance');openTopup()"><i data-lucide="circle-plus"></i><span data-i18n="topup"></span></button>
+      <div class="message" id="priMsg"></div>
+    </div>
   </section>
 
   <section class="container page-section hidden" id="balancePage">
@@ -310,7 +397,7 @@ select{background:var(--card2);color:var(--text);padding:10px;border:1px solid v
     <p class="section-subtitle" data-i18n="profileSub"></p>
     <div class="profile-head">
       <div class="avatar"><i data-lucide="user-round"></i></div>
-      <div><h3 id="profileName"></h3><p id="profileCity"></p></div>
+      <div><h3 id="profileName"></h3><p id="profileCity"></p><p id="profileBadge" style="color:var(--gold2)"></p></div>
     </div>
 
     <div class="setting">
@@ -355,8 +442,13 @@ select{background:var(--card2);color:var(--text);padding:10px;border:1px solid v
   </section>
 </div>
 
+<div class="cart-bar hidden" id="cartBar" onclick="openCart()">
+  <i data-lucide="shopping-cart"></i><span class="grow" id="cartBarText"></span><span id="cartBarSize"></span>
+</div>
+
 <nav class="bottom-nav hidden" id="bottomNav">
   <button class="nav-btn active" data-page="products" onclick="showPage('products')"><i data-lucide="shopping-bag"></i><span data-i18n="navProducts"></span></button>
+  <button class="nav-btn" data-page="bonus" onclick="showPage('bonus')"><i data-lucide="gift"></i><span data-i18n="navBonus"></span></button>
   <button class="nav-btn" data-page="balance" onclick="showPage('balance')"><i data-lucide="wallet"></i><span data-i18n="navBalance"></span></button>
   <button class="nav-btn" data-page="profile" onclick="showPage('profile')"><i data-lucide="user-round"></i><span data-i18n="navProfile"></span></button>
 </nav>
@@ -370,6 +462,7 @@ const icons = () => { if (window.lucide) lucide.createIcons(); };
 /* ===== Переводы ===== */
 const T = {
 ru:{
+p8:"Набор «Олимп» — продуманная подборка для тех, кто любит получать больше.",p9:"Афина — надёжная защита и стабильное качество на каждый день.",p10:"Гермес — быстрое решение с акцентом на скорость и удобство.",p11:"Аполлон — золотой стандарт с безупречным исполнением.",p12:"Посейдон — гибкий вариант с балансом цены и качества.",p13:"Гера — отобранная премиальная серия для ценителей.",p14:"Арес — чемпионская версия с усиленными характеристиками.",p15:"Аид — закрытая коллекция с особым уровнем исполнения.",sort:"Сортировка",sortDef:"По умолчанию",sortQual:"По качеству",sortAsc:"Цена: по возрастанию",sortDesc:"Цена: по убыванию",addCart:"В корзину",added:"Добавлено в корзину",cart:"Корзина",subtotal:"Сумма",total:"К оплате",checkout:"Оформить заказ",clear:"Очистить корзину",emptyCart:"Корзина пуста",checkSize:"Размер чека",checkSmall:"Малый",checkMed:"Средний",checkLarge:"Большой",checkHint:"Соберите чек больше 60 $ — и получите скидку 20% на следующий чек.",checkEarn:"Большой чек! После заказа вы получите скидку 20% на следующий чек.",disc50:"Колесо фортуны",disc20:"Бонус за большой чек",couponGot:"Вы получили скидку 20% на следующий чек!",bonuses:"Бонусы",navBonus:"Бонусы",bonusSub:"Колесо фортуны, скидки и приоритет",wheelTitle:"Колесо фортуны",wheelDesc:"Крутите колесо и получайте −50% на любой товар в течение 1 часа. Одно вращение в 24 часа.",spin:"Крутить колесо",wheelWin:"Победа! −50% на любой товар на 1 час!",spinWait:"Следующее вращение через {t}",discActive:"Скидка −50% активна ещё {t}",wheelReady:"Колесо готово — крутите!",couponTitle:"Скидка за большой чек",couponHave:"У вас есть скидка 20% на следующий чек.",couponNone:"Скидки пока нет. Соберите чек больше 60 $.",checksInfo:"Малый чек — до 30 $, средний — от 30 до 60 $, большой — больше 60 $.",priTitle:"Приоритет",priDesc:"Подписка на месяц — 50 $.",pri1:"Ваши заказы выдаются первыми",pri2:"Личный менеджер онлайн 24/7",pri3:"Приоритет в очереди и в поддержке",priBuy:"Подключить за 50 $",priRenew:"Продлить за 50 $",priActive:"Приоритет активен до {d}",manager:"Написать менеджеру",priDone:"Приоритет подключён!",badProduct:"Товар недоступен",
 buy:"Купить",buyDone:"Заказ оформлен! Мы свяжемся с вами.",noFunds:"Недостаточно средств. Нужно {p} $ на балансе.",server:"Ошибка сервера. Попробуйте ещё раз.",copy:"Скопировать адрес",copied:"Адрес скопирован",iPaid:"Я оплатил",claimSent:"Заявка отправлена. Баланс пополнится после проверки платежа.",payTo:"Отправьте эквивалент {a} $ в {c} на этот адрес:",payOpened:"Откройте счёт в Crypto Bot и оплатите любой криптовалютой. Баланс обновится автоматически.",paidOk:"Оплата получена, баланс пополнен!",txid:"TXID транзакции (необязательно)",cpfail:"Не удалось создать счёт. Попробуйте позже.",limit:"Слишком много необработанных заявок.",
 noServer:"Сервер недоступен. Откройте магазин через Telegram-бота.",welcome:"Добро пожаловать",login:"Вход",register:"Регистрация",enter:"Войти",create:"Создать аккаунт",
 loginPh:"Логин",passPh:"Пароль",confirmPh:"Подтверждение пароля",
@@ -390,6 +483,7 @@ priv1:"Мы храним только логин и город",priv2:"Данн�
 commTitle:"Добро пожаловать в Zeus Shop!",commBig:"Самая низкая комиссия",commText:"У нас самая маленькая комиссия на рынке. Пополняйте баланс и покупайте выгодно.",great:"Отлично",
 p1:"Премиальный продукт с качественным исполнением и вниманием к деталям.",p2:"Надёжное решение для тех, кто ценит качество, удобство и стабильность.",p3:"Особенная серия с премиальным оформлением и высоким уровнем исполнения.",p4:"Продуманный комплект для пользователей, которые выбирают функциональность.",p5:"Практичный вариант с хорошим качеством и сбалансированными характеристиками.",p6:"Яркая коллекция с оригинальной концепцией и стильным дизайном.",p7:"Флагманская линейка для тех, кто предпочитает максимальное качество."},
 uk:{
+p8:"Набір «Олімп» — продумана добірка для тих, хто любить отримувати більше.",p9:"Афіна — надійний захист і стабільна якість щодня.",p10:"Гермес — швидке рішення з акцентом на швидкість і зручність.",p11:"Аполлон — золотий стандарт із бездоганним виконанням.",p12:"Посейдон — гнучкий варіант із балансом ціни та якості.",p13:"Гера — відібрана преміальна серія для поціновувачів.",p14:"Арес — чемпіонська версія з посиленими характеристиками.",p15:"Аїд — закрита колекція з особливим рівнем виконання.",sort:"Сортування",sortDef:"За замовчуванням",sortQual:"За якістю",sortAsc:"Ціна: за зростанням",sortDesc:"Ціна: за спаданням",addCart:"У кошик",added:"Додано в кошик",cart:"Кошик",subtotal:"Сума",total:"До сплати",checkout:"Оформити замовлення",clear:"Очистити кошик",emptyCart:"Кошик порожній",checkSize:"Розмір чека",checkSmall:"Малий",checkMed:"Середній",checkLarge:"Великий",checkHint:"Зберіть чек більше 60 $ — і отримайте знижку 20% на наступний чек.",checkEarn:"Великий чек! Після замовлення ви отримаєте знижку 20% на наступний чек.",disc50:"Колесо фортуни",disc20:"Бонус за великий чек",couponGot:"Ви отримали знижку 20% на наступний чек!",bonuses:"Бонуси",navBonus:"Бонуси",bonusSub:"Колесо фортуни, знижки та пріоритет",wheelTitle:"Колесо фортуни",wheelDesc:"Крутіть колесо та отримуйте −50% на будь-який товар протягом 1 години. Одне обертання на 24 години.",spin:"Крутити колесо",wheelWin:"Перемога! −50% на будь-який товар на 1 годину!",spinWait:"Наступне обертання через {t}",discActive:"Знижка −50% діє ще {t}",wheelReady:"Колесо готове — крутіть!",couponTitle:"Знижка за великий чек",couponHave:"У вас є знижка 20% на наступний чек.",couponNone:"Знижки поки немає. Зберіть чек більше 60 $.",checksInfo:"Малий чек — до 30 $, середній — від 30 до 60 $, великий — понад 60 $.",priTitle:"Пріоритет",priDesc:"Підписка на місяць — 50 $.",pri1:"Ваші замовлення видаються першими",pri2:"Особистий менеджер онлайн 24/7",pri3:"Пріоритет у черзі та підтримці",priBuy:"Підключити за 50 $",priRenew:"Продовжити за 50 $",priActive:"Пріоритет активний до {d}",manager:"Написати менеджеру",priDone:"Пріоритет підключено!",badProduct:"Товар недоступний",
 buy:"Купити",buyDone:"Замовлення оформлено! Ми зв'яжемось з вами.",noFunds:"Недостатньо коштів. Потрібно {p} $ на балансі.",server:"Помилка сервера. Спробуйте ще раз.",copy:"Скопіювати адресу",copied:"Адресу скопійовано",iPaid:"Я оплатив",claimSent:"Заявку надіслано. Баланс поповниться після перевірки платежу.",payTo:"Надішліть еквівалент {a} $ у {c} на цю адресу:",payOpened:"Відкрийте рахунок у Crypto Bot і сплатіть будь-якою криптовалютою. Баланс оновиться автоматично.",paidOk:"Оплату отримано, баланс поповнено!",txid:"TXID транзакції (необов'язково)",cpfail:"Не вдалося створити рахунок. Спробуйте пізніше.",limit:"Забагато необроблених заявок.",
 noServer:"Сервер недоступний. Відкрийте магазин через Telegram-бота.",welcome:"Ласкаво просимо",login:"Вхід",register:"Реєстрація",enter:"Увійти",create:"Створити акаунт",
 loginPh:"Логін",passPh:"Пароль",confirmPh:"Підтвердження пароля",
@@ -410,6 +504,7 @@ priv1:"Ми зберігаємо лише логін і місто",priv2:"Да�
 commTitle:"Ласкаво просимо до Zeus Shop!",commBig:"Найнижча комісія",commText:"У нас найменша комісія на ринку. Поповнюйте баланс і купуйте вигідно.",great:"Чудово",
 p1:"Преміальний продукт з якісним виконанням та увагою до деталей.",p2:"Надійне рішення для тих, хто цінує якість, зручність і стабільність.",p3:"Особлива серія з преміальним оформленням і високим рівнем виконання.",p4:"Продуманий комплект для користувачів, які обирають функціональність.",p5:"Практичний варіант з хорошою якістю та збалансованими характеристиками.",p6:"Яскрава колекція з оригінальною концепцією та стильним дизайном.",p7:"Флагманська лінійка для тих, хто віддає перевагу максимальній якості."},
 pl:{
+p8:"Zestaw „Olimp” — przemyślany wybór dla tych, którzy lubią dostawać więcej.",p9:"Atena — niezawodna ochrona i stabilna jakość na co dzień.",p10:"Hermes — szybkie rozwiązanie stawiające na tempo i wygodę.",p11:"Apollo — złoty standard o bezbłędnym wykonaniu.",p12:"Posejdon — elastyczny wariant z dobrym stosunkiem ceny do jakości.",p13:"Hera — wyselekcjonowana seria premium dla koneserów.",p14:"Ares — mistrzowska wersja o wzmocnionych parametrach.",p15:"Hades — zamknięta kolekcja o szczególnym poziomie wykonania.",sort:"Sortowanie",sortDef:"Domyślnie",sortQual:"Wg jakości",sortAsc:"Cena: rosnąco",sortDesc:"Cena: malejąco",addCart:"Do koszyka",added:"Dodano do koszyka",cart:"Koszyk",subtotal:"Suma",total:"Do zapłaty",checkout:"Złóż zamówienie",clear:"Wyczyść koszyk",emptyCart:"Koszyk jest pusty",checkSize:"Rozmiar paragonu",checkSmall:"Mały",checkMed:"Średni",checkLarge:"Duży",checkHint:"Zbierz paragon powyżej 60 $ — a dostaniesz 20% zniżki na następny.",checkEarn:"Duży paragon! Po zamówieniu dostaniesz 20% zniżki na następny.",disc50:"Koło fortuny",disc20:"Bonus za duży paragon",couponGot:"Otrzymałeś 20% zniżki na następne zamówienie!",bonuses:"Bonusy",navBonus:"Bonusy",bonusSub:"Koło fortuny, zniżki i priorytet",wheelTitle:"Koło fortuny",wheelDesc:"Zakręć kołem i zyskaj −50% na dowolny produkt przez 1 godzinę. Jedno losowanie na 24 godziny.",spin:"Zakręć kołem",wheelWin:"Wygrana! −50% na dowolny produkt na 1 godzinę!",spinWait:"Następne losowanie za {t}",discActive:"Zniżka −50% aktywna jeszcze {t}",wheelReady:"Koło gotowe — kręć!",couponTitle:"Zniżka za duży paragon",couponHave:"Masz 20% zniżki na następne zamówienie.",couponNone:"Brak zniżki. Zbierz paragon powyżej 60 $.",checksInfo:"Mały paragon — do 30 $, średni — 30–60 $, duży — powyżej 60 $.",priTitle:"Priorytet",priDesc:"Subskrypcja na miesiąc — 50 $.",pri1:"Twoje zamówienia realizowane są jako pierwsze",pri2:"Osobisty menedżer online 24/7",pri3:"Pierwszeństwo w kolejce i wsparciu",priBuy:"Aktywuj za 50 $",priRenew:"Przedłuż za 50 $",priActive:"Priorytet aktywny do {d}",manager:"Napisz do menedżera",priDone:"Priorytet aktywowany!",badProduct:"Produkt niedostępny",
 buy:"Kup",buyDone:"Zamówienie złożone! Skontaktujemy się z Tobą.",noFunds:"Za mało środków. Potrzeba {p} $ na saldzie.",server:"Błąd serwera. Spróbuj ponownie.",copy:"Skopiuj adres",copied:"Adres skopiowany",iPaid:"Zapłaciłem",claimSent:"Zgłoszenie wysłane. Saldo zostanie zasilone po weryfikacji płatności.",payTo:"Wyślij równowartość {a} $ w {c} na ten adres:",payOpened:"Otwórz rachunek w Crypto Bot i zapłać dowolną kryptowalutą. Saldo zaktualizuje się automatycznie.",paidOk:"Płatność otrzymana, saldo zasilone!",txid:"TXID transakcji (opcjonalnie)",cpfail:"Nie udało się utworzyć rachunku. Spróbuj później.",limit:"Zbyt wiele nierozpatrzonych zgłoszeń.",
 noServer:"Serwer niedostępny. Otwórz sklep przez bota Telegram.",welcome:"Witamy",login:"Logowanie",register:"Rejestracja",enter:"Zaloguj się",create:"Utwórz konto",
 loginPh:"Login",passPh:"Hasło",confirmPh:"Potwierdź hasło",
@@ -446,23 +541,35 @@ function price(pln) {
   return new Intl.NumberFormat(c.loc, {maximumFractionDigits:0}).format(v) + " " + c.sym;
 }
 const usd = pln => (Math.round(pln / PLN_PER_USD * 100) / 100).toFixed(2);
-const PRODUCTS = [
- ["crown","Zeus Cocaine","p1","Premium",160],["shield-check","Zeus Xanax","p2","Quality",100],
- ["gem","Golden MDMA","p3","Exclusive",100],["zap","Thunder Crystal","p4","Popular",100],
- ["star","Zeus Standard Hash","p5","Standard",140],["flame","Inferno THC 48%","p6","Limited",140],
- ["package","Zeus Mefedron","p7","Ultimate",180]];
+const PRODUCTS = [  // [иконка, название, id/описание, тег, цена zł, качество 1-5]
+ ["crown","Zeus Cocaine Premium","p1","Premium",160,4],["shield-check","Zeus Hash","p2","Quality",100,3],
+ ["gem","Golden MDMA Edition","p3","Exclusive",100,5],["zap","Thunder Mefedrone","p4","Popular",100,3],
+ ["star","Zeus Xanax","p5","Standard",140,2],["flame","Inferno LSD","p6","Limited",140,4],
+ ["package","Zeus Alpha PVP","p7","Ultimate",180,5],
+ ["gift","Olympus Crystal","p8","Popular",120,3],["shield","Athena Codeine","p9","Quality",130,4],
+ ["rocket","Speed PVP","p10","Fast",110,3],["award","Zeus MDMA ultra","p11","Exclusive",150,5],
+ ["layers","Poseidon Wave THC 21%","p12","Standard",100,2],["sparkles","Heroine","p13","Premium",140,4],
+ ["trophy","Ares THC 48%","p14","Limited",125,4],["key-round","Hades Oxycodone","p15","Quality",115,3]
+];
 
 function renderProducts() {
-  $("productsGrid").innerHTML = PRODUCTS.map((p, i) => `
+  const mode = $("sortSelect") ? $("sortSelect").value : "def";
+  const list = PRODUCTS.map((p, i) => ({p, i}));
+  if (mode === "qual") list.sort((a, b) => b.p[5] - a.p[5] || b.p[4] - a.p[4]);
+  if (mode === "asc")  list.sort((a, b) => a.p[4] - b.p[4]);
+  if (mode === "desc") list.sort((a, b) => b.p[4] - a.p[4]);
+  $("productsGrid").innerHTML = list.map(({p, i}) => `
     <article class="product" onclick="openProduct(${i})">
       <div class="product-icon">
         <img class="plogo" src="logo.jpg" alt="" onerror="this.style.display='none'">
         <i data-lucide="${p[0]}"></i>
       </div>
       <h3>${p[1]}</h3><p>${t(p[2])}</p>
+      <div class="stars">${"★".repeat(p[5])}${"☆".repeat(5 - p[5])}</div>
       <div class="price"><i data-lucide="tag"></i>${price(p[4])}<small>≈ ${usd(p[4])} $</small></div>
       <span class="product-tag"><i data-lucide="sparkle"></i>${p[3]}</span>
     </article>`).join("");
+  icons();
 }
 
 function renderMethods() {
@@ -581,14 +688,58 @@ function pollBalance() {
   }, 5000);
 }
 
-/* ===== Карточка товара ===== */
-let curProduct = null, buying = false;
+/* ===== Скидки, корзина, чеки ===== */
+const CHECK_MED = 30, CHECK_LARGE = 60, WHEEL_PCT = 50, COUPON_PCT = 20, PRIORITY_PRICE = 50;
+let SKEW = 0, curProduct = null, buying = false, lastDisc = "";
+let CART = {};
+try { CART = JSON.parse(localStorage.getItem("zeusCart") || "{}"); } catch(e) {}
+const nowS = () => Date.now() / 1000 + SKEW;
+const prod = id => PRODUCTS.find(p => p[2] === id);
+const costUsd = id => Math.round(prod(id)[4] / PLN_PER_USD * 100) / 100;
+const saveCart = () => { try { localStorage.setItem("zeusCart", JSON.stringify(CART)); } catch(e) {} };
+const cartCount = () => Object.values(CART).reduce((a, b) => a + b, 0);
+
+function discountInfo() {
+  if (ME && ME.wheelUntil > nowS()) return {pct: WHEEL_PCT, key: "disc50"};
+  if (ME && ME.coupon) return {pct: COUPON_PCT, key: "disc20"};
+  return {pct: 0, key: ""};
+}
+function cartCalc(items) {
+  let sub = 0;
+  for (const [id, q] of Object.entries(items)) if (prod(id)) sub += costUsd(id) * q;
+  sub = Math.round(sub * 100) / 100;
+  const d = discountInfo();
+  return {sub, d, total: Math.round(sub * (100 - d.pct)) / 100,
+          sizeKey: sub > CHECK_LARGE ? "checkLarge" : sub >= CHECK_MED ? "checkMed" : "checkSmall"};
+}
+const errText = e => t(e.code || "noServer") + (e.detail ? " [" + e.detail + "]" : "");
+
+async function doCheckout(items, msgEl) {
+  if (buying) return "busy";
+  buying = true; msgEl.textContent = "…";
+  try {
+    const d = await api("/api/checkout", {items: Object.entries(items).map(([id, qty]) => ({id, qty}))});
+    ME = d.user; updateProfile();
+    msgEl.textContent = t("buyDone") + (d.couponGranted ? " " + t("couponGot") : "");
+    return "ok";
+  } catch(e) {
+    if (e.code === "noFunds") { msgEl.textContent = t("noFunds").replace("{p}", e.need); return "nofunds"; }
+    msgEl.textContent = errText(e); return "err";
+  } finally { buying = false; }
+}
+
+/* --- карточка товара --- */
 function openProduct(i) {
   curProduct = PRODUCTS[i];
-  $("pmIcon").innerHTML = '<i data-lucide="' + curProduct[0] + '"></i>';
-  $("pmName").textContent = curProduct[1];
-  $("pmDesc").textContent = t(curProduct[2]);
-  $("pmPrice").innerHTML = price(curProduct[4]) + '<div style="font-size:12px;color:var(--muted);font-weight:normal;margin-top:4px">≈ ' + usd(curProduct[4]) + ' $</div>';
+  const p = curProduct, d = discountInfo();
+  $("pmIcon").innerHTML = '<i data-lucide="' + p[0] + '"></i>';
+  $("pmName").textContent = p[1];
+  $("pmStars").textContent = "★".repeat(p[5]) + "☆".repeat(5 - p[5]);
+  $("pmDesc").textContent = t(p[2]);
+  const now = p[4] * (100 - d.pct) / 100;
+  $("pmPrice").innerHTML = (d.pct ? '<s style="font-size:16px;color:var(--muted);font-weight:normal">' + price(p[4]) + '</s> ' : "")
+    + price(now) + '<div style="font-size:12px;color:var(--muted);font-weight:normal;margin-top:4px">≈ '
+    + (Math.round(usd(p[4]) * (100 - d.pct)) / 100).toFixed(2) + ' $' + (d.pct ? ' · −' + d.pct + '%' : '') + '</div>';
   $("pmMessage").textContent = "";
   $("pmTopup").classList.add("hidden");
   $("productModal").classList.remove("hidden");
@@ -596,22 +747,128 @@ function openProduct(i) {
 }
 function closeProduct() { $("productModal").classList.add("hidden"); }
 async function buyProduct() {
-  if (buying || !curProduct) return;
-  buying = true;
-  const msg = $("pmMessage");
-  msg.textContent = "…";
-  try {
-    const d = await api("/api/buy", {product: curProduct[2]});
-    ME = d.user; updateProfile();
-    msg.textContent = t("buyDone");
-  } catch(e) {
-    if (e.code === "noFunds") {
-      msg.textContent = t("noFunds").replace("{p}", usd(curProduct[4]));
-      $("pmTopup").classList.remove("hidden");
-    } else msg.textContent = t(e.code || "noServer") + (e.detail ? " [" + e.detail + "]" : "");
-  }
-  buying = false;
+  if (!curProduct) return;
+  const r = await doCheckout({[curProduct[2]]: 1}, $("pmMessage"));
+  if (r === "nofunds") $("pmTopup").classList.remove("hidden");
 }
+
+/* --- корзина --- */
+function addToCart(id) { CART[id] = (CART[id] || 0) + 1; saveCart(); updateCartBar(); $("pmMessage").textContent = t("added"); }
+function changeQty(id, delta) { CART[id] = (CART[id] || 0) + delta; if (CART[id] <= 0) delete CART[id]; saveCart(); updateCartBar(); renderCart(); }
+function clearCart() { CART = {}; saveCart(); updateCartBar(); renderCart(); }
+function updateCartBar() {
+  const n = cartCount();
+  const show = n > 0 && ME && !$("productsPage").classList.contains("hidden");
+  $("cartBar").classList.toggle("hidden", !show);
+  if (!show) return;
+  const c = cartCalc(CART);
+  $("cartBarText").textContent = n + " · " + c.total.toFixed(2) + " $";
+  $("cartBarSize").textContent = t(c.sizeKey);
+}
+function openCart() { $("cartMsg").textContent = ""; $("cartTopup").classList.add("hidden"); renderCart(); $("cartModal").classList.remove("hidden"); }
+function closeCart() { $("cartModal").classList.add("hidden"); }
+function renderCart() {
+  const ids = Object.keys(CART).filter(prod);
+  if (!ids.length) {
+    $("cartItems").innerHTML = '<p style="text-align:center;margin:14px 0">' + t("emptyCart") + '</p>';
+    $("cartSummary").innerHTML = ""; $("cartCheckout").classList.add("hidden"); return;
+  }
+  $("cartCheckout").classList.remove("hidden");
+  $("cartItems").innerHTML = ids.map(id => { const p = prod(id); return `
+    <div class="cart-row"><i data-lucide="${p[0]}"></i>
+      <div class="cr-name">${p[1]}<small>${price(p[4])} · ≈ ${usd(p[4])} $</small></div>
+      <div class="qty"><button onclick="changeQty('${id}',-1)">−</button><span>${CART[id]}</span><button onclick="changeQty('${id}',1)">+</button></div>
+    </div>`; }).join("");
+  const c = cartCalc(CART);
+  let h = `<div class="sum-row" style="margin-top:8px"><span>${t("subtotal")}</span><b>${c.sub.toFixed(2)} $</b></div>`
+    + `<div class="sum-row"><span>${t("checkSize")}</span><b class="size-badge">${t(c.sizeKey)}</b></div>`;
+  if (c.d.pct) h += `<div class="sum-row"><span>${t(c.d.key)}</span><b>−${c.d.pct}%</b></div>`;
+  h += `<div class="sum-row total"><span>${t("total")}</span><b>${c.total.toFixed(2)} $</b></div>`
+    + `<p class="hint ${c.sub > CHECK_LARGE ? "ok" : ""}">${t(c.sub > CHECK_LARGE ? "checkEarn" : "checkHint")}</p>`;
+  $("cartSummary").innerHTML = h;
+  icons();
+}
+async function checkoutCart() {
+  const r = await doCheckout(CART, $("cartMsg"));
+  if (r === "ok") { CART = {}; saveCart(); updateCartBar(); renderCart(); }
+  if (r === "nofunds") $("cartTopup").classList.remove("hidden");
+}
+
+/* --- колесо фортуны --- */
+const WHEEL_ICONS = ["⚡", "🔥", "💎", "👑", "⭐", "🎁"];
+let wheelRot = 0, spinning = false;
+function renderWheel() {
+  const pt = (r, deg) => [(r * Math.sin(deg * Math.PI / 180)).toFixed(2), (-r * Math.cos(deg * Math.PI / 180)).toFixed(2)];
+  let h = "";
+  for (let i = 0; i < 6; i++) {
+    const a = pt(100, i * 60), b = pt(100, (i + 1) * 60), c = pt(60, i * 60 + 30), even = i % 2 === 0;
+    h += `<path d="M0,0 L${a[0]},${a[1]} A100,100 0 0 1 ${b[0]},${b[1]} Z" fill="${even ? "#c99b50" : "#2a2118"}" stroke="#15110b" stroke-width="1"/>`
+      + `<text x="${c[0]}" y="${+c[1] - 3}" text-anchor="middle" font-size="20">${WHEEL_ICONS[i]}</text>`
+      + `<text x="${c[0]}" y="${+c[1] + 15}" text-anchor="middle" font-size="12" font-weight="bold" fill="${even ? "#15110b" : "#e4bd77"}">−50%</text>`;
+  }
+  $("wheelSvg").innerHTML = h;
+}
+async function spinWheel() {
+  if (spinning) return;
+  spinning = true; $("spinBtn").disabled = true; $("spinMsg").textContent = "";
+  try {
+    const d = await api("/api/spin", {});
+    const target = (360 - (d.segment * 60 + 30)) % 360;
+    wheelRot += 360 * 5 + (((target - wheelRot % 360) % 360) + 360) % 360;
+    $("wheelSvg").style.transform = "rotate(" + wheelRot + "deg)";
+    setTimeout(() => {
+      ME = d.user; spinning = false; updateProfile();
+      $("spinMsg").textContent = t("wheelWin");
+    }, 4200);
+  } catch(e) {
+    spinning = false;
+    $("spinMsg").textContent = e.code === "spinWait" ? t("spinWait").replace("{t}", fmtDur(e.wait)) : errText(e);
+    refreshBonus();
+  }
+}
+
+/* --- приоритет --- */
+async function buyPriority() {
+  const msg = $("priMsg"); msg.textContent = "…"; $("priTopup").classList.add("hidden");
+  try {
+    const d = await api("/api/priority", {});
+    ME = d.user; updateProfile(); msg.textContent = t("priDone");
+  } catch(e) {
+    if (e.code === "noFunds") { msg.textContent = t("noFunds").replace("{p}", PRIORITY_PRICE); $("priTopup").classList.remove("hidden"); }
+    else msg.textContent = errText(e);
+  }
+}
+function openManager() {
+  const u = ME && ME.managerUrl;
+  if (!u) return;
+  try { Telegram.WebApp.openTelegramLink(u); } catch(e) { window.open(u, "_blank"); }
+}
+
+/* --- состояние бонусов --- */
+function fmtDur(s) {
+  s = Math.max(0, Math.floor(s));
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ":" : "") + String(m).padStart(2, "0") + ":" + String(x).padStart(2, "0");
+}
+function refreshBonus() {
+  if (!ME) return;
+  const n = nowS(), lines = [];
+  if (ME.wheelUntil > n) lines.push(t("discActive").replace("{t}", fmtDur(ME.wheelUntil - n)));
+  const wait = ME.nextSpin - n;
+  if (wait > 0) lines.push(t("spinWait").replace("{t}", fmtDur(wait))); else if (!lines.length) lines.push(t("wheelReady"));
+  $("wheelStatus").innerHTML = lines.join("<br>");
+  $("spinBtn").disabled = wait > 0 || spinning;
+  $("couponStatus").textContent = t(ME.coupon ? "couponHave" : "couponNone");
+  const active = ME.priorityUntil > n;
+  const loc = {uk: "uk-UA", pl: "pl-PL", ru: "ru-RU"}[lang] || "ru-RU";
+  $("priStatus").textContent = active ? t("priActive").replace("{d}", new Date(ME.priorityUntil * 1000).toLocaleDateString(loc)) : "";
+  $("priBtnText").textContent = t(active ? "priRenew" : "priBuy");
+  $("priManager").classList.toggle("hidden", !(active && ME.managerUrl));
+  $("profileBadge").textContent = active ? "⭐ Priority" : "";
+  const key = discountInfo().key;
+  if (key !== lastDisc) { lastDisc = key; if (!$("cartModal").classList.contains("hidden")) renderCart(); updateCartBar(); }
+}
+setInterval(() => { if (ME) refreshBonus(); }, 1000);
 
 /* ===== Сервер ===== */
 try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch(e) {}
@@ -629,7 +886,8 @@ async function api(path, body) {
   try { r = await fetch(API() + path, opt); }
   catch(err) { throw Object.assign(err, {code: "noServer", detail: "network"}); }
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(d.error || "error"), {status: r.status, code: d.error || "noServer", detail: d.detail || ("HTTP " + r.status)});
+  if (!r.ok) throw Object.assign(new Error(d.error || "error"), {status: r.status, code: d.error || "noServer", detail: d.detail || ("HTTP " + r.status), wait: d.wait, need: d.need});
+  if (d.user && d.user.now) SKEW = d.user.now - Date.now() / 1000;
   return d;
 }
 
@@ -733,11 +991,13 @@ function updateProfile() {
   $("balanceValue").textContent = Number(ME.balance || 0).toFixed(2) + " $";
   $("themeSelect").value = ME.theme || "dark";
   document.body.classList.toggle("light", ME.theme==="light");
+  refreshBonus(); updateCartBar();
 }
 
 function showPage(page) {
-  ["products","balance","profile"].forEach(n => $(n+"Page").classList.toggle("hidden", n!==page));
+  ["products","bonus","balance","profile"].forEach(n => $(n+"Page").classList.toggle("hidden", n!==page));
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page===page));
+  updateCartBar();
   icons();
 }
 
@@ -749,7 +1009,7 @@ function changeTheme(theme) {
 }
 
 function logout() {
-  TOKEN = ""; ME = null;
+  TOKEN = ""; ME = null; updateCartBar();
   localStorage.removeItem("zeusToken");
   $("app").classList.add("hidden");
   $("bottomNav").classList.add("hidden");
@@ -777,6 +1037,7 @@ async function route() {
   icons();
 }
 
+renderWheel();
 applyLang();
 
 window.addEventListener("load", () => {
